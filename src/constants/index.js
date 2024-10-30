@@ -54,7 +54,7 @@ export const PROJECTS = [
     description:
       `Developed a convolutional neural network model in TensorFlow for classifying Alzheimer's severity based on MRI brain images, achieving 96% accuracy. Tackled imbalanced data challenges using data augmentation techniques, and launched a user-accessible web application using Python and Streamlit.`,
     technologies: ["Python", "TensorFlow", "Keras","Alzheimer", "CNN", "Data Augmentation", "Streamlit"],
-    link:"https://github.com/chandru-g24/Alzheimer-detection",
+    link:"https://github.com/itzmechandruganeshan/Alzheimer-detection",
   },
   {
     title: "Predictive Modeling for Diabetic Outcome Classification",
@@ -63,7 +63,7 @@ export const PROJECTS = [
     description:
       `Utilized diabetes data from the Kaggle repository to train a decision tree model with 90% accuracy, incorporating feature engineering and meticulous data preprocessing. Conducted Exploratory Data Analysis (EDA) with statistical tests and visualizations to select key features. Built an interactive web application using Python and Streamlit for user engagement with visualizations.`,
     technologies: ["Python","Diabetes", "Decision Tree", "Feature Engineering", "EDA", "Streamlit"],
-    link:"https://github.com/chandru-g24/Diabetes-Prediction"
+    link:"https://github.com/itzmechandruganeshan/Diabetes-Prediction"
   },
   {
     title: "AI Framework for Pathogen Classification",
@@ -72,7 +72,7 @@ export const PROJECTS = [
     description:
       `Developed an AI-based framework for classifying meningoencephalitis pathogens using HRM and CT data from rt-PCR analysis, achieving 97% accuracy. Leveraged a file-parsing technique for raw data extraction and a rule-based approach for genuine peak selection to reduce noise in the data.`,
     technologies: ["Python", "Machine Learning", "File Parsing", "rt-PCR Analysis","Peak Selection","Classification",],
-    link:"https://github.com/chandru-g24/Pathogen-detector"
+    link:"https://github.com/itzmechandruganeshan/Pathogen-detector"
   },
   {
     title: "Deep Learning Architecture for Video-based Emotion Recognition",
@@ -81,7 +81,7 @@ export const PROJECTS = [
     description:
       `Designed a deep learning architecture using a CNN model with pre-existing Kaggle dataset, employing Haar-cascade for facial feature extraction. Utilized an LSTM model to predict future emotions based on video frames' sequential probability values, achieving an average accuracy of 65%.`,
     technologies: ["Python", "TensorFlow", "CNN", "LSTM", "Haar-cascade","Emotion Recognition",],
-    link:"https://github.com/chandru-g24/Emotion_Prediction"
+    link:"https://github.com/itzmechandruganeshan/Emotion_Prediction"
   },
 ];
 

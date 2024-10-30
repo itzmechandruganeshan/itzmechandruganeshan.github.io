@@ -13,7 +13,7 @@ const Navbar = () => {
       <motion.a whileHover={{ scale: 1.5 }} whileTap={{ scale: 1.5 }} href="https://www.linkedin.com/in/chandru-g24" target="_blank" rel="noopener noreferrer">
         <FaLinkedin cursor={"pointer"} className='"text-neutral-400 hover:text-purple-900 transition duration-200'/>
       </motion.a>
-      <motion.a whileHover={{ scale: 1.5 }} whileTap={{ scale: 1.5 }} href="https://github.com/chandru-g24" target="_blank" rel="noopener noreferrer">
+      <motion.a whileHover={{ scale: 1.5 }} whileTap={{ scale: 1.5 }} href="https://github.com/itzmechandruganeshan" target="_blank" rel="noopener noreferrer">
         <FaGithub cursor={"pointer"} className='"text-neutral-400 hover:text-purple-900 transition duration-200'/>
       </motion.a>
       <motion.a whileHover={{ scale: 1.5 }} whileTap={{ scale: 1.5 }} href="mailto:chandruganeshan24@gmail.com" target="_blank" rel="noopener noreferrer">

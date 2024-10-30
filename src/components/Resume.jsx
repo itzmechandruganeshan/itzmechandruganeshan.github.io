@@ -10,7 +10,7 @@
                     Contact: (+91) - 9087535918 | Email: <a href="mailto:chandruganeshan24@gmail.com" className="underline hover:text-cyan-500 transition duration-300">chandruganeshan24@gmail.com</a>
                 </p>
                 <p className="text-center text-gray-500 mb-6">
-                    GitHub: <a href="https://github.com/chandru-g24" className="text-cyan-600 hover:underline hover:text-cyan-500 transition duration-300">Github/chandru-g24</a> | 
+                    GitHub: <a href="https://github.com/itzmechandruganeshan" className="text-cyan-600 hover:underline hover:text-cyan-500 transition duration-300">Github/itzmechandruganeshan</a> | 
                     LinkedIn: <a href="https://linkedin.com/in/chandru-g24" className="text-cyan-600 hover:underline hover:text-cyan-500 transition duration-300">LinkedIn/chandru-g24</a>
                 </p>
 
@@ -70,7 +70,7 @@
                 <Section title="Self Projects">
                     <ul className="list-disc list-inside mb-4 text-gray-700 space-y-3">
                         <li className="bg-white p-4 rounded-xl shadow-lg border-2 border-transparent hover:border-gradient-to-r hover:from-orange-400 hover:to-red-400 transition-all duration-300">
-                            <a href="https://github.com/chandru-g24/PyMLRS" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-cyan-500 transition duration-300"><strong>PyMLRS (Open Source)</strong><br /></a>
+                            <a href="https://github.com/itzmechandruganeshan/PyMLRS" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-cyan-500 transition duration-300"><strong>PyMLRS (Open Source)</strong><br /></a>
                             April 2024 – May 2024
                             <ul className="list-decimal list-inside mt-2 space-y-1">
                                 <li>PyMLRS is an open-source Python library designed for robust Data Extraction, Data Visualization, efficient Feature Extraction, and Accurate Classification of pathogens causing meningoencephalitis.</li>
@@ -79,7 +79,7 @@
                             </ul>
                         </li>
                         <li className="bg-white p-4 rounded-xl shadow-lg border-2 border-transparent hover:border-gradient-to-r hover:from-blue-400 hover:to-purple-400 transition-all duration-300">
-                        <a href="https://github.com/chandru-g24/Alzheimer-detection" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-cyan-500 transition duration-300"><strong>Machine Learning-based Alzheimer’s Severity Prediction</strong><br /></a>
+                        <a href="https://github.com/itzmechandruganeshan/Alzheimer-detection" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-cyan-500 transition duration-300"><strong>Machine Learning-based Alzheimer’s Severity Prediction</strong><br /></a>
                             June 2023
                             <ul className="list-decimal list-inside mt-2 space-y-1">
                                 <li> Utilized pre-existing MRI scanned brain images to train a convolutional neural network in TensorFlow, maximizing efficiency and accuracy</li>
@@ -89,7 +89,7 @@
                             </ul>
                         </li>
                         <li className="bg-white p-4 rounded-xl shadow-lg border-2 border-transparent hover:border-gradient-to-r hover:from-blue-400 hover:to-purple-400 transition-all duration-300">
-                        <a href="https://github.com/chandru-g24/Diabetes-Prediction" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-cyan-500 transition duration-300"><strong>Predictive modeling for diabetic outcome classification: A Machine Learning Framework</strong><br /></a>
+                        <a href="https://github.com/itzmechandruganeshan/Diabetes-Prediction" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-cyan-500 transition duration-300"><strong>Predictive modeling for diabetic outcome classification: A Machine Learning Framework</strong><br /></a>
                             <ul className="list-decimal list-inside mt-2 space-y-1">
                                 <li> Leveraged diabetes data from the Kaggle repository to train a decision tree model, enhancing its performance through meticulous data preprocessing and feature engineering.</li>
                                 <li>Conducted Exploratory Data Analysis (EDA) employing statistical tests and visualizations, meticulously selecting pertinent features to train the model.</li>
@@ -137,7 +137,7 @@
                 <Section title="Released Software">
                     <ul className="list-disc list-inside mb-4 text-gray-700 space-y-3">
                         <li className="bg-white p-4 rounded-xl shadow-lg border-2 border-transparent hover:border-gradient-to-r hover:from-yellow-500 hover:to-orange-500 transition-all duration-300">
-                            <a href="https://github.com/chandru-g24/REXTRACTOR" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-cyan-500 transition duration-300"><strong>Rextractor</strong></a>
+                            <a href="https://github.com/itzmechandruganeshan/REXTRACTOR" target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-cyan-500 transition duration-300"><strong>Rextractor</strong></a>
                             <ul className="list-decimal list-inside mt-2 space-y-1 ml-4">
                                 <li>Customized tool for independent PCR data extraction from .rex files, eliminating reliance on Rotor-Gene Q-Rex software.</li>
                                 <li>Capable of extracting HRM and Amplification data from Rotor-Gene Q-Rex .rex files, offering a standalone solution for conversion to Excel format.</li>

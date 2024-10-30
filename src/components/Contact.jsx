@@ -38,7 +38,7 @@ const Contact = () => {
           <motion.a 
             whileHover={{ scale: 1.1 }} 
             whileTap={{ scale: 0.9 }}
-            href="https://github.com/chandru-g24" 
+            href="https://github.com/itzmechandruganeshan" 
             target="_blank" 
             rel="noopener noreferrer"
             className="text-neutral-400 hover:text-purple-900 transition duration-200"
