@@ -28,6 +28,20 @@ export const EXPERIENCES = [
   }
 ];
 
+export const EDUCATION = [
+  {
+    year: "2022 - 2024",
+    role: "M.Sc.Data Analytics",
+    company: "Bharathiar University, Coimbatore",
+    description: `I graduated with a major in Computer Science and Engineering, specializing in Artificial Intelligence and Machine Learning. I completed my undergraduate studies with a CGPA of 8.5, showcasing my strong academic performance and commitment to academic excellence.`,
+  },
+  {
+    year: "2019 - 2022",
+    role: "B.Sc.Statistics",
+    company: "Government Arts College, Coimbatore",
+    description: `I graduated with a major in Computer Science and Engineering, specializing in Artificial Intelligence and Machine Learning. I completed my undergraduate studies with a CGPA of 8.5, showcasing my strong academic performance and commitment to academic excellence.`,
+  }
+]
 export const PROJECTS = [
   {
     title: "PyMLRS (Open Source)",

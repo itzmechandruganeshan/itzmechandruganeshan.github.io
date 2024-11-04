@@ -9,7 +9,7 @@ const container = (delay) => ({
 });
 
 const Hero = () => {
-  const titles = ['Generative AI Engineer'];
+  const titles = ['Generative AI Engineer',"ML Engineer","Data Scientist"];
   const typewriterText = useTypewriter(titles);
 
   return (
