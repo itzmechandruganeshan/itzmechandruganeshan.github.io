@@ -1,4 +1,5 @@
 import PyMLRS from "../assets/projects/pymlrs.png";
+import PortfoliloBot from "../assets/speech-bubble.png";
 import Alzheimer from "../assets/projects/alzheimer.jpg";
 import Diabetes from "../assets/projects/diabetes.jpg";
 import Pathogen from "../assets/projects/pathogen.jpg";
@@ -13,8 +14,15 @@ I have a strong interest in LLM agents and chatbots, exploring ways to create im
 
 export const EXPERIENCES = [
   {
-    year: "May 2024 - Present",
-    role: "Generative AI Engineer",
+    year: "Jan 2025 - Present",
+    role: "Machine Learning Engineer",
+    company: "CloudSide Technologies Pvt Ltd",
+    description: `Working on Chatbot Creation using Dialogflow CX and RAG Chatbots`,
+    technologies: ["Python","Langchain","Langgraph","GCP", "Dialogflow CX"],
+  },
+  {
+    year: "May 2024 - Dec 2024",
+    role: "Machine Learning Engineer - Intern",
     company: "ISPG Technologies Pvt Ltd",
     description: `I am developing a Context-Aware Chatbot utilizing LangChain to enhance user interactions with intelligent responses. Additionally, I have implemented semantic search capabilities paired with smart filtering techniques, leveraging Python, LLMs, and Hugging Face. This work aims to create a more efficient and engaging user experience through advanced natural language processing.`,
     technologies: ["Python","Langchain","Langgraph","React.js", "MongoDB","Neo4j"],
@@ -43,6 +51,15 @@ export const EDUCATION = [
   }
 ]
 export const PROJECTS = [
+  {
+    title: "Portfolio-Bot",
+    image: PortfoliloBot,
+    duration: "April 2024 – May 2024",
+    description:
+      `The Portfolio Chatbot is an interactive conversational agent designed to engage users and recruiters by showcasing my professional background, projects, and work experience. This project highlights my enthusiasm for Generative AI and Retrieval-Augmented Generation (RAG), enhancing my ability to present myself effectively in a professional context.`,
+    technologies: ["Python", "Langgraph","ChromaDB","RAG"],
+    link:"https://github.com/itzmechandruganeshan/itzmechandruganeshan.github.io"
+  },
   {
     title: "PyMLRS (Open Source)",
     image: PyMLRS,

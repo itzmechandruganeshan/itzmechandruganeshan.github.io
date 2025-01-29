@@ -5,7 +5,7 @@
             <div className="my-10 p-8 lg:px-16 md:px-12 sm:px-6 bg-white bg-transparent text-gray-900 rounded-xl shadow-2xl max-w-5xl mx-auto">
                 {/* Header */}
                 <h1 className="text-4xl font-bold text-center text-gray-800 mb-4">Chandru Ganeshan</h1>
-                <p className="text-center text-lg text-gray-600 mb-2">Generative AI Engineer</p>
+                <p className="text-center text-lg text-gray-600 mb-2">Machine Learning Engineer</p>
                 <p className="text-center text-gray-500 mb-2">
                     Contact: (+91) - 9087535918 | Email: <a href="mailto:chandruganeshan24@gmail.com" className="underline hover:text-cyan-500 transition duration-300">chandruganeshan24@gmail.com</a>
                 </p>
@@ -33,10 +33,17 @@
                 {/* Skills Section */}
                 <Section title="Skills">
                     <ul className="list-disc list-inside mb-4 text-gray-700 space-y-3">
-                        <li><strong>Programming Languages:</strong> Python (Langchain, Langgraph, Fastapi, Pandas, Numpy, Plotly, Matplotlib, Seaborn, Scipy, Scikit-learn, Tensorflow, Keras, Tkinter, Customtkinter, Pyautogui, Streamlit, BeautifulSoup), R (dplyr, ggplot, plotly)</li>
-                        <li><strong>Query Languages:</strong> SQL (Fundamental), Cypher (Fundamental)</li>
-                        <li><strong>Platforms:</strong> Visual Studio Code, Jupyter Notebook, Git, GitHub, Docker</li>
-                        <li><strong>Tools:</strong> Excel, MySQL</li>
+                        <li><strong>Programming Languages:</strong> Python, R (dplyr, ggplot, plotly)</li>
+                        <li><strong>Databases:</strong> MySQL, PostgresSQL, Neo4j</li>
+                        <li><strong>Libraries:</strong> Python (langchain, langgraph, autogen, crewai, huggingface, tensorflow, keras, 
+                            open-cv, sklearn, streamlit, pandas, numpy, scipy, matplotlib, seaborn, plotly)</li>
+                        <li><strong>Data wrangling:</strong> Data extraction, Data cleaning, Exploratory Data Analysis, Feature Engineering
+                        and selection.</li>
+                        <li><strong>Machine Learning:</strong> Data modelling, Clustering and Classification, Regression analysis, Predictive 
+modelling, Model validation, Fine tuning, Deployment, CNN, RCNN, LSTM, 
+Transformer models</li>
+                        <li><strong>Generative AI Frameworks:</strong> Langchain, Langgraph, Autogen, CrewAI, Huggingface, Dialogflow CX</li>
+                        <li><strong>DevOps:</strong> Git, Github, Docker, Postman, Flask, FastAPI</li>
                     </ul>
                 </Section>
 
@@ -44,8 +51,15 @@
                 <Section title="Work Experience">
                     <ul className="list-disc list-inside mb-4 text-gray-700 space-y-3">
                         <li className="bg-white p-4 rounded-xl shadow-lg border-2 border-transparent hover:border-gradient-to-r hover:from-green-400 hover:to-blue-400 transition-all duration-300">
+                            <strong>Machine Learning Engineer</strong> | CloudSide Technologies Pvt Ltd, Coimbatore<br />
+                            Jan 2025 – Present
+                            <ul className="list-decimal list-inside mt-2 space-y-1">
+                                <li>Building a Chatbot using Dialogflow CX.</li>
+                            </ul>
+                        </li>
+                        <li className="bg-white p-4 rounded-xl shadow-lg border-2 border-transparent hover:border-gradient-to-r hover:from-green-400 hover:to-blue-400 transition-all duration-300">
                             <strong>Generative AI Engineer</strong> | ISPG Technologies Pvt Ltd, Kochi<br />
-                            May 2024 – Present
+                            May 2024 – Dec 2024
                             <ul className="list-decimal list-inside mt-2 space-y-1">
                                 <li>Building a chatbot using LangChain to provide intelligent, contextually relevant responses for enhanced user interactions.</li>
                                 <li>Implementing semantic search to improve the chatbot’s ability to understand and retrieve relevant information effectively.</li>

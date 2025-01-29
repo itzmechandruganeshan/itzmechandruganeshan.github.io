@@ -8,6 +8,7 @@ import Contact from "./components/Contact";
 import { Helmet } from "react-helmet";
 import iconImage from "/Hero_image.png";
 import Copyright from "./components/Copyright";
+import Chatbot from "./components/Chatbot";
 
 const App = () => {
   return (
@@ -27,6 +28,7 @@ const App = () => {
         <Experience />
         <Projects />
         <Contact />
+        <Chatbot />
         <Copyright  />
       </div>
     </div>

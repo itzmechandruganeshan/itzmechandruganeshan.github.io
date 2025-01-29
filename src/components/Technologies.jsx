@@ -73,14 +73,16 @@ const categories = [
             { src: "/images/langgraph.svg", alt: "Langgraph", duration: 3 },
             { src: "/images/huggingface.svg", alt: "Hugging Face", duration: 2 },
             { src: "/images/autogen.svg", alt: "Autogen", duration: 3 },
-            { src: "/images/crewai.svg", alt: "Crewa AI", duration: 3 }
+            { src: "/images/crewai.svg", alt: "Crewa AI", duration: 3 },
+            { src: "/images/dialogflow-cx-svgrepo-com.svg", alt: "Dialogflow CX", duration:3}
         ],
     },
     {
         title: "Learning",
         icons: [
             { src: "/images/react.svg", alt: "React", duration: 3 },
-            { src: "/images/js.svg", alt: "JavaScript", duration: 3 }
+            { src: "/images/js.svg", alt: "JavaScript", duration: 3 },
+            { src: "/images/gcp-svgrepo-com.svg", alt:"Google Cloud Platform", duration:3}
         ],
     },
 
