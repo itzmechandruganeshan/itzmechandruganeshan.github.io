@@ -1,0 +1,16 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.git
+.github
+*.db
+*.db-shm
+*.db-wal
+*.pdf
+server.log
+.env
+tests/
+.gitignore
+README.md
