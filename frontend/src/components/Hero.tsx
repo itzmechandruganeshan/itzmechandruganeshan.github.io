@@ -9,7 +9,8 @@ import { useChat } from "@/context/ChatContext";
 
 export const Hero = () => {
     const { scrollY } = useScroll();
-    const y = useTransform(scrollY, [0, 500], [0, 200]);
+    const y = useTransform(scrollY, [0, 800], [0, 300]);
+    const opacity = useTransform(scrollY, [0, 400], [1, 0]);
     const { openChat } = useChat();
 
     return (
@@ -19,7 +20,7 @@ export const Hero = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/90 pointer-events-none z-10" />
 
             <motion.div
-                style={{ y }}
+                style={{ y, opacity }}
                 className="relative z-20 max-w-6xl mx-auto px-6 text-center"
             >
 
@@ -49,7 +50,7 @@ export const Hero = () => {
                     transition={{ duration: 0.8, delay: 0.5 }}
                     className="max-w-xl mx-auto mb-10"
                 >
-                    <button
+                    {/* <button
                         onClick={openChat}
                         className="w-full flex items-center gap-3 px-6 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group backdrop-blur-md"
                     >
@@ -62,7 +63,7 @@ export const Hero = () => {
                                 <Command className="w-3 h-3 mr-1" /> K
                             </kbd>
                         </div>
-                    </button>
+                    </button> */}
                 </motion.div>
 
                 <motion.div

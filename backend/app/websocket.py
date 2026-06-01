@@ -97,6 +97,7 @@ async def websocket_chat_endpoint(websocket: WebSocket):
 
     # Resume or create session
     session_id, history, conversation_summary = await SessionService.get_or_create_session(user_hash_id)
+    is_returning = len(history) > 0
 
     # Register connection
     async with manager._lock:
@@ -105,6 +106,33 @@ async def websocket_chat_endpoint(websocket: WebSocket):
             manager.active_tasks[session_id] = set()
 
     logger.info(f"Session {session_id[:8]} connected. Active: {len(manager.active_connections)}")
+
+    if is_returning:
+        async def send_welcome():
+            try:
+                await websocket.send_json({"type": "status", "action": "typing"})
+                full_response = ""
+                prompt = "System: The user just returned to the chat. Greet them casually, acknowledging they are back (e.g. 'Hey hi, glad that you are returning back'). Keep it short, 1 or 2 sentences."
+                
+                async for item in orchestrator.generate_response(session_id, prompt, history, conversation_summary, save_user_message=False):
+                    if item.get("type") == "control":
+                        await websocket.send_json({"type": "status", "action": item.get("action")})
+                    elif item.get("type") == "message":
+                        msg_text = item.get("text", "")
+                        full_response += msg_text + " "
+                        await websocket.send_json({"type": "message", "text": msg_text})
+                
+                if full_response.strip():
+                    history.append({"role": "assistant", "content": full_response.strip()})
+
+                await websocket.send_json({"type": "status", "action": "idle"})
+                await websocket.send_json({"type": "turn_complete"})
+            except Exception as e:
+                logger.error(f"Welcome back error for {session_id[:8]}: {e}")
+
+        task = asyncio.create_task(send_welcome())
+        manager.active_tasks[session_id].add(task)
+        task.add_done_callback(manager.active_tasks[session_id].discard)
 
     try:
         while True:

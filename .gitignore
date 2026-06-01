@@ -19,6 +19,7 @@ backend/*.db-shm
 backend/*.db-wal
 backend/server.log
 backend/.env
+backend/test*.py
 
 # ========================
 # Frontend

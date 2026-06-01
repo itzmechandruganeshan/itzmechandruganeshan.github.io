@@ -36,7 +36,7 @@ class LLMProvider:
         }
 
         payload = {
-            "model": "stepfun/step-3.5-flash:free",
+            "model": "openrouter/free",
             "messages": messages,
             "stream": False,
             "max_tokens": 1000,

@@ -25,13 +25,13 @@ const ProjectCard = ({
 }) => {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            whileHover={{ y: -5 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="group relative p-8 glass-panel rounded-3xl overflow-hidden hover:bg-white/5 transition-all duration-300 flex flex-col h-full"
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, delay: index * 0.15, ease: "easeOut" }}
+            className="group relative p-8 glass-panel rounded-3xl overflow-hidden transition-all duration-500 flex flex-col h-full hover:-translate-y-2 hover:shadow-[0_8px_30px_rgb(59,130,246,0.12)] border border-white/5 hover:border-blue-500/30"
         >
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="relative z-10 flex flex-col h-full">
                 <div className="flex justify-between items-start mb-4">
                     <div>

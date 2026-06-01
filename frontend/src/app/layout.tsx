@@ -3,6 +3,8 @@ import { Inter, Roboto_Mono } from "next/font/google"; // specific fonts
 import "./globals.css";
 import { ChatProvider } from "@/context/ChatContext";
 import { CmdKChatbot } from "@/components/CmdKChatbot";
+import { ScrollProgress } from "@/components/ScrollProgress";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -28,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${robotoMono.variable} antialiased`}
       >
+        <ScrollProgress />
         <ChatProvider>
           {children}
           <CmdKChatbot />

@@ -65,7 +65,8 @@ class AgentOrchestrator:
         user_message: str,
         history: list[dict],
         conversation_summary: str | None = None,
-    ) -> AsyncGenerator[str, None]:
+        save_user_message: bool = True,
+    ) -> AsyncGenerator[dict, None]:
         """
         Core async generator: streams humanized LLM output with ReAct tool calling.
         Hardened against prompt injection, LLM dropouts, and cancelled tasks.
@@ -74,7 +75,8 @@ class AgentOrchestrator:
             logger.warning(f"Session {session_id}: message truncated ({len(user_message)} chars)")
             user_message = user_message[:MAX_USER_MESSAGE_LENGTH]
 
-        await SessionService.save_message(session_id, "user", user_message)
+        if save_user_message:
+            await SessionService.save_message(session_id, "user", user_message)
 
         system_prompt = self._load_system_prompt()
         messages = [{"role": "system", "content": system_prompt}]
@@ -212,7 +214,7 @@ class AgentOrchestrator:
                             "X-Title": "Portfolio Agent",
                         },
                         json={
-                            "model": "stepfun/step-3.5-flash:free",
+                            "model": "inclusionai/ring-2.6-1t:free",
                             "messages": [{"role": "user", "content": prompt}],
                         },
                         timeout=30.0,

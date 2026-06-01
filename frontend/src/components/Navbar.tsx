@@ -35,7 +35,7 @@ export const Navbar = () => {
             >
                 <div className="container mx-auto px-6 flex justify-between items-center">
                     <a href="#" className="text-xl font-bold text-white tracking-tighter">
-                        CG<span className="text-blue-500">.AI</span>
+                        CG<span className="text-blue-500"></span>
                     </a>
 
                     {/* Desktop Menu */}
