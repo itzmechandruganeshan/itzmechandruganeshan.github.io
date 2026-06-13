@@ -23,8 +23,8 @@ def test_websocket_chat(client, mocker):
     Test the WebSocket endpoint: verifies the full message protocol
     (typing → chunks → idle → turn_complete).
     """
-    async def mock_generator(session_id, user_message, history):
-        yield {"type": "message", "text": "Hey bro! |split| Welcome to my portfolio"}
+    async def mock_generator(session_id, user_message, history, conversation_summary=None, save_user_message=True):
+        yield {"type": "message", "text": "Hey bro! Welcome to my portfolio"}
 
     mocker.patch(
         "app.websocket.orchestrator.generate_response",
@@ -32,6 +32,10 @@ def test_websocket_chat(client, mocker):
     )
 
     with client.websocket_connect("/ws/chat") as websocket:
+        # Expect session ID first
+        session_msg = websocket.receive_json()
+        assert session_msg["type"] == "session_id"
+
         websocket.send_text("Hello")
 
         # Typing indicator
@@ -41,7 +45,7 @@ def test_websocket_chat(client, mocker):
         # Single combined response chunk
         chunk1 = websocket.receive_json()
         assert chunk1["type"] == "message"
-        assert chunk1["text"] == "Hey bro! |split| Welcome to my portfolio"
+        assert chunk1["text"] == "Hey bro! Welcome to my portfolio"
 
         idle_status = websocket.receive_json()
         assert idle_status == {"type": "status", "action": "idle"}

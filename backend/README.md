@@ -74,13 +74,11 @@ Create a `.env` file:
 
 ```env
 OPENROUTER_API_KEY=sk-or-v1-your-key-here
-COMPOSIO_API_KEY=ak_your-composio-key
 ```
 
 | Variable             | Required | Description                                                          |
 | -------------------- | -------- | -------------------------------------------------------------------- |
 | `OPENROUTER_API_KEY` | Yes      | API key for [OpenRouter](https://openrouter.ai) LLM access           |
-| `COMPOSIO_API_KEY`   | Yes      | API key for [Composio](https://composio.dev) external tool execution |
 
 ### Run Locally
 
@@ -98,7 +96,7 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ### Run Tests
 
 ```bash
-uv run pytest tests/ -v
+PYTHONPATH=. uv run pytest tests/ -v
 ```
 
 ### Docker
@@ -155,7 +153,6 @@ curl http://localhost:8000/health
 | ------------------ | ------ | --------------------------------------- |
 | `get_current_time` | Native | Returns current IST date/time           |
 | `schedule_meeting` | Native | Generates pre-filled Calendly link      |
-| External tools     | MCP    | Routed to Composio API with retry logic |
 
 ---
 

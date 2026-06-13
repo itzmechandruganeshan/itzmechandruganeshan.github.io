@@ -1,12 +1,9 @@
-import hashlib
 import uuid
 import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Tuple
 
-import aiosqlite
-
-from app.database import DB_FILE
+import app.database
 
 logger = logging.getLogger(__name__)
 
@@ -15,29 +12,29 @@ class SessionService:
     """Handles user session retrieval, creation, and message persistence."""
 
     @staticmethod
-    def get_user_hash_id(client_ip: str, user_agent: str) -> str:
-        """Returns a stable, anonymous hash for a given IP and User-Agent."""
-        return hashlib.sha256(f"{client_ip}-{user_agent}".encode()).hexdigest()
-
-    @staticmethod
-    async def get_or_create_session(user_hash_id: str) -> Tuple[str, list[dict]]:
+    async def get_or_create_session(client_session_id: Optional[str]) -> Tuple[str, list[dict], Optional[str]]:
         """
         Looks up an existing active session (within 24 hours), or creates a new one.
         Returns a tuple: (session_id, history_messages, conversation_summary)
         """
-        session_id: Optional[str] = None
+        session_id: Optional[str] = client_session_id
         history: list[dict] = []
         conversation_summary: Optional[str] = None
+        db = app.database.db_connection
+
+        if not db:
+            logger.error("Database connection not initialized.")
+            return str(uuid.uuid4()) if not session_id else session_id, [], None
 
         try:
-            async with aiosqlite.connect(DB_FILE, timeout=15.0) as db:
+            if session_id:
                 cursor = await db.execute(
                     """
                     SELECT session_id, last_active_at, id, conversation_summary FROM session
-                    WHERE user_hash_id = ?
+                    WHERE session_id = ?
                     ORDER BY last_active_at DESC LIMIT 1
                     """,
-                    (user_hash_id,),
+                    (session_id,),
                 )
                 row = await cursor.fetchone()
 
@@ -51,7 +48,6 @@ class SessionService:
                                 last_active = last_active.replace(tzinfo=timezone.utc)
 
                             if datetime.now(timezone.utc) - last_active < timedelta(hours=24):
-                                session_id = db_session_id_str
                                 logger.info(f"Resuming session {session_id[:8]}...")
 
                                 hist_cur = await db.execute(
@@ -77,16 +73,17 @@ class SessionService:
                                     
                         except Exception as e:
                             logger.error(f"Time parsing error {e}, generating new session")
+                            session_id = None  # Fallback to creating a new one
 
-                if not session_id:
-                    session_id = str(uuid.uuid4())
-                    logger.info(f"New session {session_id[:8]}...")
-                    now_str = datetime.now(timezone.utc).isoformat()
-                    await db.execute(
-                        "INSERT INTO session (session_id, user_hash_id, last_active_at, created_at) VALUES (?, ?, ?, ?)",
-                        (session_id, user_hash_id, now_str, now_str),
-                    )
-                    await db.commit()
+            if not session_id:
+                session_id = str(uuid.uuid4())
+                logger.info(f"New session {session_id[:8]}...")
+                now_str = datetime.now(timezone.utc).isoformat()
+                await db.execute(
+                    "INSERT INTO session (session_id, user_hash_id, last_active_at, created_at) VALUES (?, ?, ?, ?)",
+                    (session_id, "unknown", now_str, now_str),
+                )
+                await db.commit()
 
         except Exception as e:
             logger.error(f"SQLite error determining session: {e}")
@@ -98,20 +95,24 @@ class SessionService:
     @staticmethod
     async def save_message(session_id_str: str, role: str, content: str):
         """Saves a single message to the associated session."""
-        try:
-            async with aiosqlite.connect(DB_FILE, timeout=15.0) as db:
-                cursor = await db.execute(
-                    "SELECT id FROM session WHERE session_id = ?", (session_id_str,)
-                )
-                row = await cursor.fetchone()
-                if not row:
-                    logger.error(f"Cannot save message, session {session_id_str} not found.")
-                    return
+        db = app.database.db_connection
+        if not db:
+            logger.error("Database connection not initialized.")
+            return
 
-                await db.execute(
-                    "INSERT INTO message (session_id, role, content, created_at) VALUES (?, ?, ?, ?)",
-                    (row[0], role, content, datetime.now(timezone.utc).isoformat()),
-                )
-                await db.commit()
+        try:
+            cursor = await db.execute(
+                "SELECT id FROM session WHERE session_id = ?", (session_id_str,)
+            )
+            row = await cursor.fetchone()
+            if not row:
+                logger.error(f"Cannot save message, session {session_id_str} not found.")
+                return
+
+            await db.execute(
+                "INSERT INTO message (session_id, role, content, created_at) VALUES (?, ?, ?, ?)",
+                (row[0], role, content, datetime.now(timezone.utc).isoformat()),
+            )
+            await db.commit()
         except Exception as e:
             logger.error(f"Failed to save message to DB: {e}")

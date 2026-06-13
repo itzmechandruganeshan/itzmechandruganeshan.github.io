@@ -1,0 +1,15 @@
+architecture:
+  - "Prefers multi-agent orchestration over monolithic prompts (e.g., hierarchical Reasoning Engines)."
+  - "Values decoupled logic (e.g., separating NLP extraction from semantic search)."
+  - "Uses strict fallback cascades (Vector -> BM25 -> Fuzzy) to maximize retrieval reliability."
+  - "Favors asynchronous operations and threading to eliminate latency bottlenecks."
+
+performance_and_safety:
+  - "Prioritizes latency reduction via parallel processing and O(1) lookups."
+  - "Enforces strict confidence cutoffs (e.g., 55% cosine similarity) to prevent false positive retrievals."
+  - "Implements multi-stage deduplication before writing to live CRMs."
+
+llm_usage:
+  - "Implements strict JSON-only prompts coupled with regex extractors to mitigate hallucination."
+  - "Believes in multimodal feedback loops (e.g., passing image frames back into prompts) for continuous context."
+  - "Comfortable selecting the right model for the job (Mistral-7B for extraction, Veo for video, Gemini 2.5 Pro for reasoning)."

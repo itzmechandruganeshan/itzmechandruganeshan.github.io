@@ -7,11 +7,6 @@ import logging
 import urllib.parse
 from datetime import datetime, timezone, timedelta
 
-import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-
-from app.config import settings
-
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -86,42 +81,3 @@ def execute_native_tool(tool_name: str, arguments: dict) -> str | None:
         )
 
     return None
-
-
-# ---------------------------------------------------------------------------
-# External tool executor (Composio MCP)
-# ---------------------------------------------------------------------------
-
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=2, max=10),
-    retry=retry_if_exception_type((httpx.RequestError, httpx.HTTPStatusError)),
-    reraise=True,
-)
-async def _execute_mcp_with_retry(
-    tool_name: str, arguments: dict, client: httpx.AsyncClient
-) -> str:
-    """Executes a Composio MCP action with exponential backoff."""
-    logger.info(f"Executing MCP tool: {tool_name} (Args: {arguments})")
-    headers = {
-        "Authorization": f"Bearer {settings.composio_api_key}",
-        "Content-Type": "application/json",
-    }
-    response = await client.post(
-        "https://backend.composio.dev/api/v1/actions/execute",
-        headers=headers,
-        json={"action": tool_name, "params": arguments},
-        timeout=30.0,
-    )
-    response.raise_for_status()
-    return response.text
-
-
-async def execute_mcp_tool(tool_name: str, arguments: dict) -> str:
-    """Public wrapper for Composio tool execution with retries."""
-    try:
-        async with httpx.AsyncClient() as client:
-            return await _execute_mcp_with_retry(tool_name, arguments, client)
-    except Exception as e:
-        logger.error(f"Tool execution failed after retries for {tool_name}: {e}")
-        return f"Error: Tool execution failed - {str(e)}"

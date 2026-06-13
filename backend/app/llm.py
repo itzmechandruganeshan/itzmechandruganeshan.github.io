@@ -36,17 +36,19 @@ class LLMProvider:
         }
 
         payload = {
-            "model": "openrouter/free",
+            "model": "openrouter/pareto-code",
             "messages": messages,
-            "stream": False,
+            "stream": True,
             "max_tokens": 1000,
-            "tools": tools,
-            "tool_choice": "auto",
             "temperature": 0.4,
             "top_p": 0.9,
             "frequency_penalty": 0.5,
             "presence_penalty": 0.3,
         }
+        
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
 
         async with httpx.AsyncClient(verify=False) as client:
             retries = 0
@@ -54,46 +56,66 @@ class LLMProvider:
 
             while retries < MAX_RETRIES and not success:
                 try:
-                    response = await client.post(
+                    async with client.stream(
+                        "POST",
                         "https://openrouter.ai/api/v1/chat/completions",
                         headers=headers,
                         json=payload,
                         timeout=60.0,
-                    )
-                    
-                    if response.status_code != 200:
-                        err_text = response.text
-                        try:
-                            err_data = response.json()
-                            if "error" in err_data:
-                                err_text = str(err_data["error"])
-                        except json.JSONDecodeError:
-                            pass
-                        raise httpx.HTTPStatusError(f"HTTP {response.status_code}: {err_text}", request=response.request, response=response)
+                    ) as response:
+                        if response.status_code != 200:
+                            err_text = await response.aread()
+                            err_str = err_text.decode('utf-8')
+                            try:
+                                err_data = json.loads(err_str)
+                                if "error" in err_data:
+                                    err_str = str(err_data["error"])
+                            except json.JSONDecodeError:
+                                pass
+                            raise httpx.HTTPStatusError(f"HTTP {response.status_code}: {err_str}", request=response.request, response=response)
 
-                    data = response.json()
-                    if "choices" not in data or len(data["choices"]) == 0:
-                        raise httpx.RequestError("Empty choices from OpenRouter.")
+                        full_content = ""
+                        tool_calls_dict = {}
 
-                    message_data = data["choices"][0].get("message", {})
-                    content = message_data.get("content") or ""
-                    
-                    # Convert newlines to split markers like the streaming version did
-                    content = content.replace("\n", "|split|").replace("\r", "")
-                    
-                    # Tool calls format out from standard API
-                    tools_out = []
-                    if "tool_calls" in message_data:
-                        tools_out = message_data["tool_calls"]
-                        
-                    yield {"type": "done", "text": content, "tools": tools_out}
-                    success = True
+                        async for line in response.aiter_lines():
+                            line = line.strip()
+                            if line.startswith("data: ") and line != "data: [DONE]":
+                                try:
+                                    data = json.loads(line[6:])
+                                    if "choices" in data and len(data["choices"]) > 0:
+                                        delta = data["choices"][0].get("delta", {})
+                                        content = delta.get("content")
+                                        if content:
+                                            full_content += content
+                                            yield {"type": "chunk", "text": content}
+                                        
+                                        if "tool_calls" in delta:
+                                            for tc in delta["tool_calls"]:
+                                                idx = tc["index"]
+                                                if idx not in tool_calls_dict:
+                                                    tool_calls_dict[idx] = {
+                                                        "id": tc.get("id"), 
+                                                        "type": "function", 
+                                                        "function": {
+                                                            "name": tc["function"].get("name", ""), 
+                                                            "arguments": tc["function"].get("arguments", "")
+                                                        }
+                                                    }
+                                                else:
+                                                    if "function" in tc and "arguments" in tc["function"]:
+                                                        tool_calls_dict[idx]["function"]["arguments"] += tc["function"]["arguments"]
+                                except json.JSONDecodeError:
+                                    pass
+
+                        tools_out = list(tool_calls_dict.values())
+                        yield {"type": "done", "text": full_content, "tools": tools_out}
+                        success = True
 
                 except (httpx.RequestError, httpx.HTTPStatusError, asyncio.TimeoutError) as e:
                     retries += 1
                     if retries >= MAX_RETRIES:
                         logger.error(f"OpenRouter API failed after {MAX_RETRIES} retries: {e}")
-                        error_msg = "Bro, the API is super congested right now. Give me a sec to spin up another cluster...|split|"
+                        error_msg = "Bro, the API is super congested right now. Give me a sec to spin up another cluster..."
                         yield {"type": "done", "text": error_msg, "tools": []}
                         return
 
@@ -107,9 +129,8 @@ class LLMProvider:
 
                 except Exception as e:
                     logger.error(f"Unexpected LLM error: {e}")
-                    error_msg = f"My brain crashed bro. My bad. Error log: {e}|split|"
+                    error_msg = f"My brain crashed bro. My bad. Error log: {e}"
                     yield {"type": "done", "text": error_msg, "tools": []}
                     return
-
 
 provider = LLMProvider()

@@ -1,0 +1,14 @@
+name: "Chandru"
+role: "AI Engineer"
+age: 24
+location: "Coimbatore, Tamil Nadu, India"
+tagline: "Bridging the gap between cutting-edge research and real-world deployment."
+core_identity: |
+  A builder deeply curious about intelligence, intersecting math, software engineering, and human cognition. 
+  Focused on transitioning research papers into reliable production systems where latency matters and users are unforgiving.
+academic_foundation:
+  - "M.Sc. Data Analytics (AI & Data Science) - Interdisciplinary fusion of statistics and ML."
+  - "B.Sc. Statistics - Deep understanding of probability, distributions, and inferential statistics."
+hobbies:
+  - "Gym/Fitness (values incremental improvement and discipline)"
+  - "Reading AI papers on weekends"

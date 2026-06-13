@@ -20,6 +20,8 @@ backend/*.db-wal
 backend/server.log
 backend/.env
 backend/test*.py
+backend/data/
+backend/evaluation/eval_results.json
 
 # ========================
 # Frontend

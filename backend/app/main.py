@@ -4,7 +4,7 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 
-from app.database import init_db
+from app.database import init_db, close_db
 from app.websocket import router as websocket_router, manager
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Shutting down Portfolio Bot...")
     for session_id, ws in list(manager.active_connections.items()):
         await ws.close(code=1001, reason="Server shutting down")
+    await close_db()
 
 
 app = FastAPI(

@@ -80,23 +80,11 @@ async def websocket_chat_endpoint(websocket: WebSocket):
     """
     await websocket.accept()
 
-    # Identify user via IP + User-Agent hash
-    # Koyeb uses Envoy proxies, so we must check headers for the real IP
-    forwarded_for = websocket.headers.get("x-forwarded-for")
-    real_ip = websocket.headers.get("x-real-ip")
-    
-    if forwarded_for:
-        client_ip = forwarded_for.split(",")[0].strip()
-    elif real_ip:
-        client_ip = real_ip.strip()
-    else:
-        client_ip = websocket.client.host if websocket.client else "unknown"
-
-    user_agent = websocket.headers.get("user-agent", "unknown")
-    user_hash_id = SessionService.get_user_hash_id(client_ip, user_agent)
+    # Get session ID from query params
+    client_session_id = websocket.query_params.get("session_id")
 
     # Resume or create session
-    session_id, history, conversation_summary = await SessionService.get_or_create_session(user_hash_id)
+    session_id, history, conversation_summary = await SessionService.get_or_create_session(client_session_id)
     is_returning = len(history) > 0
 
     # Register connection
@@ -106,33 +94,35 @@ async def websocket_chat_endpoint(websocket: WebSocket):
             manager.active_tasks[session_id] = set()
 
     logger.info(f"Session {session_id[:8]} connected. Active: {len(manager.active_connections)}")
+    
+    # Send the session ID back to the client so they can save it
+    await websocket.send_json({"type": "session_id", "session_id": session_id})
 
     if is_returning:
-        async def send_welcome():
-            try:
-                await websocket.send_json({"type": "status", "action": "typing"})
-                full_response = ""
-                prompt = "System: The user just returned to the chat. Greet them casually, acknowledging they are back (e.g. 'Hey hi, glad that you are returning back'). Keep it short, 1 or 2 sentences."
-                
-                async for item in orchestrator.generate_response(session_id, prompt, history, conversation_summary, save_user_message=False):
-                    if item.get("type") == "control":
-                        await websocket.send_json({"type": "status", "action": item.get("action")})
-                    elif item.get("type") == "message":
-                        msg_text = item.get("text", "")
-                        full_response += msg_text + " "
-                        await websocket.send_json({"type": "message", "text": msg_text})
-                
-                if full_response.strip():
-                    history.append({"role": "assistant", "content": full_response.strip()})
+        try:
+            await websocket.send_json({"type": "status", "action": "typing"})
+            full_response = ""
+            prompt = "System: The user just returned to the chat. Greet them casually, acknowledging they are back (e.g. 'Hey hi, glad that you are returning back'). Keep it short, 1 or 2 sentences."
+            
+            async for item in orchestrator.generate_response(session_id, prompt):
+                if item.get("type") == "control":
+                    await websocket.send_json({"type": "status", "action": item.get("action")})
+                elif item.get("type") == "chunk":
+                    msg_text = item.get("text", "")
+                    full_response += msg_text
+                    await websocket.send_json({"type": "message", "text": msg_text})
+                elif item.get("type") == "message":
+                    msg_text = item.get("text", "")
+                    full_response += msg_text + " "
+                    await websocket.send_json({"type": "message", "text": msg_text})
+            
+            if full_response.strip():
+                history.append({"role": "assistant", "content": full_response.strip()})
 
-                await websocket.send_json({"type": "status", "action": "idle"})
-                await websocket.send_json({"type": "turn_complete"})
-            except Exception as e:
-                logger.error(f"Welcome back error for {session_id[:8]}: {e}")
-
-        task = asyncio.create_task(send_welcome())
-        manager.active_tasks[session_id].add(task)
-        task.add_done_callback(manager.active_tasks[session_id].discard)
+            await websocket.send_json({"type": "status", "action": "idle"})
+            await websocket.send_json({"type": "turn_complete"})
+        except Exception as e:
+            logger.error(f"Welcome back error for {session_id[:8]}: {e}")
 
     try:
         while True:
@@ -154,16 +144,20 @@ async def websocket_chat_endpoint(websocket: WebSocket):
                 await websocket.send_json({"type": "status", "action": "typing"})
 
                 full_response = ""
-                async for item in orchestrator.generate_response(session_id, user_message, history, conversation_summary):
-                    # Forward control frames (typing indicators between bursts)
+                async for item in orchestrator.generate_response(session_id, user_message):
                     if item.get("type") == "control":
                         await websocket.send_json({"type": "status", "action": item.get("action")})
-                    
-                    # Forward finalized chat bubbles
+                    elif item.get("type") == "chunk":
+                        msg_text = item.get("text", "")
+                        full_response += msg_text
+                        await websocket.send_json({"type": "message", "text": msg_text})
                     elif item.get("type") == "message":
                         msg_text = item.get("text", "")
                         full_response += msg_text + " "
                         await websocket.send_json({"type": "message", "text": msg_text})
+                    elif item.get("type") == "ui_component":
+                        # Forward the UI component event directly to the frontend
+                        await websocket.send_json(item)
 
                 history.append({"role": "user", "content": user_message})
                 if full_response.strip():
@@ -181,9 +175,8 @@ async def websocket_chat_endpoint(websocket: WebSocket):
                 )
 
     except WebSocketDisconnect:
-        logger.info(f"Session {session_id[:8]} disconnected. Summarizing...")
+        logger.info(f"Session {session_id[:8]} disconnected.")
         await manager.disconnect(session_id)
-        asyncio.create_task(orchestrator.summarize_session(session_id))
 
     except Exception as e:
         logger.error(f"WebSocket error for {session_id[:8]}: {e}")

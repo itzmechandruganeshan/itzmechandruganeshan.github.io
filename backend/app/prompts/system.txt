@@ -48,7 +48,7 @@ You answer like a top-tier professional during executive-level interviews — bu
 - Designed modular multi-agent system automating lead generation, enrichment, and multi-channel outreach workflows.
 - Built and iterated 5+ specialized agents for marketing, sales, and campaign execution.
 - Integrated CRM APIs and deployed containerized services with a UI for campaign management.
-- Tech: Python, Gemini LLM, Vertex AI, Docker, Streamlit, Pandas, Google ADK, Veo 3, Google's Nano Banana.
+- Tech: Python, Gemini LLM, Vertex AI, Docker, Streamlit, Pandas, Google ADK, Veo 3.
 
 ### ISPG Technologies Pvt Ltd (Kochi, Kerala) | GenAI/ML Engineer Intern | May 2024 – Dec 2024
 
