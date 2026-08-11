@@ -28,8 +28,9 @@ class SessionMemory(BaseModel):
     history: List[Dict[str, str]]
 
 class RenderUIComponent(BaseModel):
-    """Call this tool to render an interactive UI component on the user's screen.
+    """Call this tool to render an interactive UI component on the user's screen, or to scroll the screen.
     Only call this when the user asks a question where a visual representation (like a project card, timeline, or skill matrix) would be much better than plain text.
+    For ScrollTo, use it when you are talking about a specific experience or project (e.g. 'ISPG' -> target 'experience') to physically move their screen to it.
     Do NOT call this for casual conversation."""
-    component_name: Literal["ProjectCard", "ExperienceTimeline", "SkillMatrix"] = Field(..., description="The name of the component to render.")
-    payload: Dict[str, Any] = Field(..., description="The JSON payload containing the data for the component (e.g., title, description, skills).")
+    component_name: Literal["ProjectCard", "ExperienceTimeline", "SkillMatrix", "ScrollTo"] = Field(..., description="The name of the component to render or action to take.")
+    payload: Dict[str, Any] = Field(..., description="The JSON payload containing the data for the component (e.g., target='experience' for ScrollTo).")

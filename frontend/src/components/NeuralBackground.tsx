@@ -2,6 +2,45 @@
 
 import React, { useEffect, useRef } from "react";
 
+interface Particle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    size: number;
+}
+
+const createParticle = (width: number, height: number): Particle => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    vx: (Math.random() - 0.5) * 0.5,
+    vy: (Math.random() - 0.5) * 0.5,
+    size: Math.random() * 2 + 1,
+});
+
+const updateParticle = (p: Particle, width: number, height: number) => {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0 || p.x > width) p.vx *= -1;
+    if (p.y < 0 || p.y > height) p.vy *= -1;
+};
+
+const drawParticle = (p: Particle, ctx: CanvasRenderingContext2D) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.1)"; // Subtle white/grey for Apple dark mode
+    ctx.fill();
+};
+
+const drawConnection = (p1: Particle, p2: Particle, ctx: CanvasRenderingContext2D, distance: number, connectionDistance: number) => {
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - distance / connectionDistance) * 0.1})`;
+    ctx.lineWidth = 1;
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+};
+
 export const NeuralBackground = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -15,37 +54,7 @@ export const NeuralBackground = () => {
         let width = (canvas.width = window.innerWidth);
         let height = (canvas.height = window.innerHeight);
 
-        class Particle {
-            x: number;
-            y: number;
-            vx: number;
-            vy: number;
-            size: number;
 
-            constructor() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.size = Math.random() * 2 + 1;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x < 0 || this.x > width) this.vx *= -1;
-                if (this.y < 0 || this.y > height) this.vy *= -1;
-            }
-
-            draw() {
-                if (!ctx) return;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = "rgba(59, 130, 246, 0.5)"; // Primary blue
-                ctx.fill();
-            }
-        }
 
         const particles: Particle[] = [];
         const particleCount = 60; // Reduced for performance but enough for effect
@@ -53,7 +62,7 @@ export const NeuralBackground = () => {
 
         const init = () => {
             for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
+                particles.push(createParticle(width, height));
             }
         };
 
@@ -62,8 +71,8 @@ export const NeuralBackground = () => {
             ctx.clearRect(0, 0, width, height);
 
             particles.forEach((particle, i) => {
-                particle.update();
-                particle.draw();
+                updateParticle(particle, width, height);
+                drawParticle(particle, ctx);
 
                 for (let j = i; j < particles.length; j++) {
                     const dx = particles[i].x - particles[j].x;
@@ -71,13 +80,7 @@ export const NeuralBackground = () => {
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
                     if (distance < connectionDistance) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = `rgba(59, 130, 246, ${1 - distance / connectionDistance
-                            })`;
-                        ctx.lineWidth = 1;
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.stroke();
+                        drawConnection(particles[i], particles[j], ctx, distance, connectionDistance);
                     }
                 }
             });

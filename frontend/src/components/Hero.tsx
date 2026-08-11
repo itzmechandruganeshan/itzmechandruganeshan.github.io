@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Brain, Cpu, Network, Search, Command } from "lucide-react";
 import { resumeData } from "@/data/resume";
@@ -31,7 +31,7 @@ export const Hero = () => {
                     transition={{ duration: 0.8, delay: 0.2 }}
                     className="text-5xl md:text-7xl font-bold tracking-tight mb-6"
                 >
-                    Hey <span className="animate-wave inline-block">👋</span>, I'm <span className="text-gradient">Chandru Ganeshan</span>
+                    Hey <span className="animate-wave inline-block">👋</span>, I&apos;m <span className="text-gradient">Chandru Ganeshan</span>
                 </motion.h1>
 
                 <motion.p
@@ -50,20 +50,21 @@ export const Hero = () => {
                     transition={{ duration: 0.8, delay: 0.5 }}
                     className="max-w-xl mx-auto mb-10"
                 >
-                    {/* <button
+                    <button
                         onClick={openChat}
-                        className="w-full flex items-center gap-3 px-6 py-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group backdrop-blur-md"
+                        className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl glass-panel hover:bg-white/10 hover:border-white/20 hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all group backdrop-blur-xl relative overflow-hidden"
                     >
-                        <Search className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
-                        <span className="text-gray-400 flex-1 text-left font-mono group-hover:text-white transition-colors">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                        <Search className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors relative z-10" />
+                        <span className="text-gray-400 flex-1 text-left font-mono group-hover:text-white transition-colors relative z-10 text-lg">
                             Ask my AI about me...
                         </span>
-                        <div className="flex items-center gap-1">
-                            <kbd className="hidden sm:inline-flex items-center justify-center h-6 px-2 text-xs font-sans font-medium text-gray-400 bg-white/10 rounded">
-                                <Command className="w-3 h-3 mr-1" /> K
+                        <div className="flex items-center gap-1 relative z-10">
+                            <kbd className="hidden sm:inline-flex items-center justify-center h-7 px-2.5 text-xs font-sans font-medium text-gray-400 bg-white/10 rounded border border-white/10 group-hover:border-white/20 transition-colors">
+                                <Command className="w-3.5 h-3.5 mr-1" /> K
                             </kbd>
                         </div>
-                    </button> */}
+                    </button>
                 </motion.div>
 
                 <motion.div

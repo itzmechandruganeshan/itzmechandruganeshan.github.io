@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Command, Search, X, Sparkles, Terminal, Cpu, Briefcase, FileText } from "lucide-react";
+import { Search, X, Sparkles, Terminal, Cpu, Briefcase, FileText } from "lucide-react";
 import { useChat } from "@/context/ChatContext";
 import { v4 as uuidv4 } from "uuid";
 import ReactMarkdown from "react-markdown";
@@ -65,7 +65,7 @@ export function CmdKChatbot() {
                     try {
                         data = JSON.parse(e.data);
                         isJson = true;
-                    } catch (err) {
+                    } catch {
                         isJson = false;
                     }
                 }
@@ -269,7 +269,7 @@ export function CmdKChatbot() {
                                                     </div>
                                                     <span className="text-gray-200 font-medium text-sm mb-1.5">{suggestion.title}</span>
                                                     <span className="text-gray-500 text-xs leading-relaxed group-hover:text-gray-400 transition-colors">
-                                                        "{suggestion.query}"
+                                                        &quot;{suggestion.query}&quot;
                                                     </span>
                                                 </button>
                                             ))}

@@ -11,9 +11,20 @@ export const resumeData = {
         "AI/ML Engineer specializing in **GenAI, RAG Systems, & Healthcare ML**. Experienced in designing and deploying **production-grade GenAI and machine learning systems**. Specialized in **LLM-powered applications, semantic search**, and **agent-based architectures** used in real-world environments.",
     experience: [
         {
+            company: "Searce Inc",
+            role: "AI Engineer",
+            period: "05/2026 - Present",
+            location: "Coimbatore",
+            achievements: [
+                "Architected a **decoupled LangGraph multilingual routing node** with recency-prompt injection for Mediacorp's mewatch OTT chatbot, achieving **100% fallback accuracy** on Gemini 2.5 Flash while **cutting LLM token costs by 80%** compared to upgrading models.",
+                "Migrated **EPG discovery from NL2SQL to Vertex AI Search**, engineering a 15-day rolling BigQuery dataset that eliminated SQL syntax failures and improved search relevance for fuzzy titles and temporal queries.",
+                "Designed **stateful pagination and context-aware deduplication logic** for the VOD recommendation agent, achieving **0% duplicate show suggestions** across continuous multi-turn sessions.",
+            ],
+        },
+        {
             company: "Cloudside Technologies",
             role: "AI / ML Engineer",
-            period: "01/2025 - Present",
+            period: "01/2025 - 04/2026",
             location: "Coimbatore",
             achievements: [
                 "Architected an **agent-orchestrated financial chatbot** enabling natural-language queries over structured financial data.",
@@ -57,6 +68,31 @@ export const resumeData = {
         },
     ],
     projects: [
+        {
+            name: "mewatch AI - Conversational OTT Chatbot & EPG Engine",
+            period: "05/2026 – Present",
+            company: "Searce Inc (Client: Mediacorp)",
+            description:
+                "Engineered a **conversational OTT AI chatbot & hybrid search engine** for Mediacorp's streaming platform (mewatch).",
+            summary:
+                "Architected a custom LangGraph language detector node with recency-prompt injection to handle 6+ languages (Tamil, Mandarin, Singlish, Malay, English, Chinese) with English fallback under cost-constrained Gemini 2.5 Flash models. Migrated EPG discovery from NL2SQL to Vertex AI Search with custom BigQuery data pipelines and engineered stateful recommendation filtering for VOD.",
+            impact: [
+                "Bypassed model-level attention decay in massive context windows by decoupling multilingual routing into a dedicated LangGraph node with dynamic recency-prompt injection, achieving 100% fallback accuracy on Gemini 2.5 Flash and reducing LLM token costs by 80%.",
+                "Migrated EPG discovery from NL2SQL to Vertex AI Search over a 15-day rolling BigQuery dataset, supporting fuzzy title matches, temporal schedule filtering, and semantic queries while eliminating SQL syntax errors.",
+                "Built stateful pagination and context-aware filtering for the VOD recommendation agent, achieving 0% duplicate show suggestions across continuous multi-turn sessions.",
+            ],
+            skills: [
+                "Python",
+                "LangGraph",
+                "Vertex AI (GCP)",
+                "Cloud Run",
+                "Cloud SQL",
+                "BigQuery",
+                "Apigee",
+                "Model Armor",
+                "Cloud Trace"
+            ],
+        },
         {
             name: "Tpay - AI-Powered Financial Chatbot",
             period: "01/2025 – Present",

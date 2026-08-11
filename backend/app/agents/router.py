@@ -1,4 +1,5 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Literal, Optional
+from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.config import settings
@@ -6,49 +7,90 @@ from app.schemas import IntentClassification
 
 ROUTER_MODEL = "google/gemini-2.5-flash-lite"
 
-SYSTEM_PROMPT = """You are an Intent Router for a Digital Twin AI system representing Chandru, an AI Engineer.
-Analyze the user's query and history. Output a JSON object matching the requested schema.
+class BaseIntent(BaseModel):
+    intent: Literal[
+        "PROFILE_FAQ",
+        "TECHNICAL_DEEP_DIVE",
+        "BEHAVIORAL_STORY",
+        "TOOL_SCHEDULING",
+        "CASUAL",
+        "OUT_OF_DOMAIN"
+    ]
+    confidence: float
+    is_recruiter: bool
 
-Intent Guide:
-- PROFILE_FAQ: Questions about current job, companies worked for, location, experience timeline, bio, current status.
-- TECHNICAL_DEEP_DIVE: Questions about specific projects, system architectures, tech stacks, or engineering opinions (RAG, Agents, LLMs).
-- BEHAVIORAL_STORY: Questions about failures, bugs, teamwork, or resolving conflicts.
-- TOOL_SCHEDULING: Requests to book a meeting or get the current time.
-- CASUAL: Purely small talk (e.g. "hi", "what's up", "had dinner"). DO NOT use for questions about jobs, companies, or professional background.
-- OUT_OF_DOMAIN: Questions completely unrelated to Chandru.
+class Entities(BaseModel):
+    target_companies: Optional[List[str]] = None
+    target_tech: Optional[List[str]] = None
 
-If intent needs retrieval (PROFILE_FAQ, TECHNICAL_DEEP_DIVE, BEHAVIORAL_STORY), provide an optimized 'search_query' combining key nouns.
-Additionally, extract any explicit companies mentioned (e.g., "ISPG", "Searce", "Cloudside") into 'target_companies' and any explicit technologies mentioned (e.g., "Python", "FastAPI") into 'target_tech'. Otherwise, leave them null.
-Finally, if the user explicitly says they are a recruiter, or asks typical HR/interview questions (e.g., "walk me through your resume", "what is your expected salary", "years of experience"), set 'is_recruiter' to true.
-"""
+class QueryRewrite(BaseModel):
+    search_query: str
 
 class IntentRouter:
     def __init__(self):
-        # OpenRouter wrapper using langchain_openai
         self.llm = ChatOpenAI(
             model=ROUTER_MODEL,
             api_key=settings.openrouter_api_key,
             base_url="https://openrouter.ai/api/v1",
             temperature=0.0
         )
-        self.structured_llm = self.llm.with_structured_output(IntentClassification)
+        self.intent_llm = self.llm.with_structured_output(BaseIntent)
+        self.entity_llm = self.llm.with_structured_output(Entities)
+        self.rewrite_llm = self.llm.with_structured_output(QueryRewrite)
         
     async def route_query(self, user_message: str, history_list: List[Dict[str, str]]) -> IntentClassification:
-        messages = [SystemMessage(content=SYSTEM_PROMPT)]
+        # Step 1: Intent Routing
+        intent_system = """You are an Intent Router. Classify the user query into:
+- PROFILE_FAQ: Jobs, companies, timeline, bio.
+- TECHNICAL_DEEP_DIVE: Projects, architecture, tech stack, RAG/Agent opinions.
+- BEHAVIORAL_STORY: Failures, bugs, teamwork.
+- TOOL_SCHEDULING: Book meeting or time.
+- CASUAL: Small talk.
+- OUT_OF_DOMAIN: Unrelated to Chandru.
+Also determine if the user is acting as a recruiter (is_recruiter=true)."""
+        intent_prompt = f"User Query: {user_message}"
+        try:
+            base_intent = await self.intent_llm.ainvoke([SystemMessage(content=intent_system), HumanMessage(content=intent_prompt)])
+        except Exception as e:
+            print(f"Intent routing failed: {e}")
+            return IntentClassification(intent="CASUAL", confidence=0.0, search_query=None)
+
+        if base_intent.intent not in ["PROFILE_FAQ", "TECHNICAL_DEEP_DIVE", "BEHAVIORAL_STORY"]:
+            return IntentClassification(
+                intent=base_intent.intent,
+                confidence=base_intent.confidence,
+                is_recruiter=base_intent.is_recruiter
+            )
+
+        # Step 2: Entity Extraction
+        entity_system = "Extract explicit companies (e.g. ISPG, Searce) and technologies (e.g. Python, FastAPI) from the user query. If none, return null."
+        try:
+            entities = await self.entity_llm.ainvoke([SystemMessage(content=entity_system), HumanMessage(content=intent_prompt)])
+        except Exception:
+            entities = Entities()
+
+        # Step 3: Query Rewriting (using last 3-5 turns)
+        rewrite_system = """You are a Query Rewriter. Given the recent chat history, user query, intent, and extracted entities, rewrite the user's query into an optimized search query for a vector database. Combine key nouns and technical terms. Do not use conversational filler."""
         
-        # Flatten history for the router (it just needs context)
         history_str = ""
-        for msg in history_list[-5:]: # Only last 5 messages for context
+        for msg in history_list[-4:]: # Only last 4 messages to avoid retrieval drift
             history_str += f"{msg['role']}: {msg['content']}\n"
             
-        prompt = f"Recent History:\n{history_str}\n\nUser Query: {user_message}"
-        messages.append(HumanMessage(content=prompt))
-        
+        rewrite_prompt = f"Recent History:\n{history_str}\n\nIntent: {base_intent.intent}\nEntities: {entities.model_dump()}\n\nUser Query: {user_message}"
         try:
-            result = await self.structured_llm.ainvoke(messages)
-            return result
-        except Exception as e:
-            print(f"Router failed: {e}. Falling back to CASUAL.")
-            return IntentClassification(intent="CASUAL", confidence=0.0, search_query=None)
+            rewritten = await self.rewrite_llm.ainvoke([SystemMessage(content=rewrite_system), HumanMessage(content=rewrite_prompt)])
+            search_query = rewritten.search_query
+        except Exception:
+            search_query = user_message
+
+        # Combine into Final Schema
+        return IntentClassification(
+            intent=base_intent.intent,
+            confidence=base_intent.confidence,
+            search_query=search_query,
+            target_companies=entities.target_companies,
+            target_tech=entities.target_tech,
+            is_recruiter=base_intent.is_recruiter
+        )
 
 intent_router = IntentRouter()

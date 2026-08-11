@@ -72,13 +72,17 @@ async def ingest_knowledge_base():
             try:
                 result = await process_document_agentically(file_name, content)
                 
+                total_chunks = len(result.chunks)
+                parent_doc_id = f"{category}/{file_name}"
                 for index, chunk in enumerate(result.chunks):
                     chunks_to_insert.append({
                         "content": chunk.standalone_content,
                         "metadata": {
                             "category": category,
                             "source_file": file_name,
+                            "parent_doc_id": parent_doc_id,
                             "chunk_index": index,
+                            "total_chunks": total_chunks,
                             "chunk_summary": chunk.chunk_summary,
                             "document_summary": result.document_summary,
                             "tech_stack": result.tech_stack,

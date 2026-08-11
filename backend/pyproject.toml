@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.22.1",
-    "fastapi>=0.131.0",
+    "fastapi[standard]>=0.131.0",
     "fastembed>=0.8.0",
     "gitingest>=0.3.1",
     "httpx>=0.28.1",
@@ -20,6 +20,14 @@ dependencies = [
     "tenacity>=9.1.4",
     "uvicorn>=0.41.0",
     "websockets>=16.0",
+    "flashrank>=0.2.8",
+    "composio-langchain>=0.13",
+    "langsmith>=0.8.15",
+    "datasets>=5.0.0",
+    "langchain-google-genai>=4.2.6",
+    "langchain-google-vertexai>=3.2.4",
+    "sentence-transformers>=5.6.0",
+    "deepeval>=4.0.7",
 ]
 
 [dependency-groups]

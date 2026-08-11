@@ -1,0 +1,13 @@
+uv.lock
+.venv
+.pytest_cache
+data/
+*.db
+*.db-shm
+*.db-wal
+__pycache__/
+*.pyc
+*.pyo
+server.log
+.env
+digest.txt

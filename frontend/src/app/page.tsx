@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { NeuralBackground } from "@/components/NeuralBackground";
 import { Hero } from "@/components/Hero";

@@ -22,16 +22,24 @@ class AgentOrchestrator:
         }
         
         full_reply = ""
+        critique_started = False
         # 3. Stream Execution via LangGraph
         async for event in graph.astream_events(initial_state, version="v2"):
             kind = event["event"]
             
-            # Only stream tokens from the composer node (ignore router LLM JSON tokens)
+            # Only stream tokens from the composer and critique nodes (ignore router LLM JSON tokens)
             if kind == "on_chat_model_stream":
                 node = event.get("metadata", {}).get("langgraph_node")
-                if node == "composer":
+                if node in ["composer", "critique"]:
                     chunk = event["data"]["chunk"]
                     if chunk.content:
+                        # Add a small separator if critique generated something after composer
+                        if node == "critique" and not critique_started:
+                            critique_started = True
+                            if not full_reply.endswith("\n\n"):
+                                full_reply += "\n\n"
+                                yield {"type": "chunk", "text": "\n\n"}
+                        
                         full_reply += chunk.content
                         yield {"type": "chunk", "text": chunk.content}
                         
@@ -48,9 +56,16 @@ class AgentOrchestrator:
                                     "component": args.get("component_name"),
                                     "data": args.get("payload", {})
                                 }
-            elif kind == "on_custom_event" or kind.startswith("on_chain_"):
-                # We can log other events if needed
-                pass
+            elif kind == "on_chain_end":
+                node = event.get("metadata", {}).get("langgraph_node")
+                if node == "cache_check":
+                    output = event.get("data", {}).get("output", {})
+                    # If it returned a message, it's a cache hit!
+                    if output and "messages" in output:
+                        cached_msg = output["messages"][-1].content
+                        full_reply += cached_msg
+                        # Stream the entire cached message at once
+                        yield {"type": "chunk", "text": cached_msg}
                 
         if full_reply:
             await memory_manager.add_message(session_id, "assistant", full_reply)

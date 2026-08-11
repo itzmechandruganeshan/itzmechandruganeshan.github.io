@@ -4,9 +4,34 @@
 
 ---
 
-## Cloudside Technologies Pvt. Ltd. (now Searce Inc.) | AI Engineer
+## Searce Inc | AI Engineer
 **Location:** Coimbatore, Tamil Nadu, India
-**Timeline:** ~ Jan 2025 – Present (1.5 years) *(Company acquired by Searce Inc. during tenure)*
+**Timeline:** May 2026 – Present
+
+### 1. The Core Mission
+Leading AI engineering contributions for enterprise streaming clients, notably **Mediacorp (Singapore)** on their flagship OTT platform **mewatch**. Architected high-concurrency conversational agents handling multi-lingual customer queries, Electronic Program Guide (EPG) discovery, and Video-on-Demand (VOD) recommendations under strict latency and cloud infrastructure cost constraints.
+
+### 2. Architectural & Engineering Contributions
+
+**Decoupled Multilingual Routing Node (LangGraph):**
+- Resolved model-level attention decay in cost-optimized models (`gemini-2.5-flash`) by removing heavy prompt instructions from the main orchestrator and isolating language detection into a dedicated `language_detector` node.
+- Designed fallback logic supporting 6+ languages (Tamil, Mandarin, Singlish, Malay, English, Chinese) with English fallback for unsupported languages, resolving Malay vs. Indonesian disambiguation and multi-turn context retention.
+- Applied recency-prompt injection by passing detected language instructions directly alongside the user payload, maintaining 100% rule adherence on Gemini 2.5 Flash while reducing LLM token costs by 80% compared to upgrading models.
+
+**EPG Search Engine Migration (NL2SQL → Vertex AI Search):**
+- Replaced brittle NL2SQL queries with **Vertex AI Search (GCP Data Store)** backed by a curated 15-day rolling BigQuery dataset (past 7 days + current day + upcoming 7 days).
+- Built a deterministic rulebook for temporal filtering (past/present/future EPG schedule queries), fuzzy title normalization, and rich content card schemas (`mewatch_url`, thumbnail images).
+
+**VOD Recommendation Agent Pagination:**
+- Designed stateful pagination and context-aware deduplication filters in agent memory, guaranteeing unique, non-repeating show recommendations when users request "more Tamil shows" or similar continuous queries.
+
+**Tech Stack:** Python, LangGraph, Gemini 2.5 Flash, Vertex AI Search (GCP), Cloud Run, Cloud SQL, BigQuery, Apigee, Model Armor, Cloud Trace
+
+---
+
+## Cloudside Technologies Pvt. Ltd. | AI Engineer
+**Location:** Coimbatore, Tamil Nadu, India
+**Timeline:** Jan 2025 – April 2026
 
 ### 1. The Core Mission
 I was brought in as an AI Engineer at Cloudside — a Google Cloud Partner company — to design and build enterprise-grade Generative AI applications for clients using Google's ecosystem, primarily Vertex AI, Gemini, and GCP. My primary mandate was to move beyond simple chatbots and architect genuinely autonomous, multi-agent AI systems that could replace entire human workflows.
