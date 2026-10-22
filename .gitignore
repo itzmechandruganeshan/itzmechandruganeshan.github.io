@@ -19,8 +19,9 @@ backend/*.db-shm
 backend/*.db-wal
 backend/server.log
 backend/.env
+# Employer/client codebases: local reference only, never commit
+backend/company/
 backend/test*.py
-backend/data/
 backend/evaluation/eval_results.json
 
 # ========================
@@ -47,3 +48,15 @@ frontend/.env*
 frontend/.vercel/
 frontend/*.tsbuildinfo
 frontend/next-env.d.ts
+backend/var/
+
+# ========================
+# Personal data + local tooling (never pushed)
+# ========================
+# The bot's knowledge, voice and policy files are my personal data. They stay on my machine and on the server.
+backend/data/
+backend/var/
+backend/eval/reports/
+.claude/
+.agent/
+frontend/public/resume/Chandru-Resume.pdf

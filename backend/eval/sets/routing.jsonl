@@ -1,0 +1,36 @@
+{"message": "hey", "history": [], "expected_intent": "small_talk", "expected_project": "none", "expected_persona": "unknown"}
+{"message": "good morning!", "history": [], "expected_intent": "small_talk", "expected_project": "none", "expected_persona": "unknown"}
+{"message": "how's your day going?", "history": [], "expected_intent": "small_talk", "expected_project": "none", "expected_persona": "casual"}
+{"message": "what are you up to rn?", "history": [], "expected_intent": "small_talk", "expected_project": "none", "expected_persona": "casual"}
+{"message": "where do you work currently?", "history": [], "expected_intent": "profile_fact", "expected_project": "none", "expected_persona": "unknown"}
+{"message": "which college did you study at?", "history": [], "expected_intent": "profile_fact", "expected_project": "none", "expected_persona": "unknown"}
+{"message": "how many years of experience do you have?", "history": [], "expected_intent": "profile_fact", "expected_project": "none", "expected_persona": "recruiter"}
+{"message": "how did you do the multilingual routing in mewatch?", "history": [], "expected_intent": "project_deep", "expected_project": "mewatch", "expected_persona": "engineer"}
+{"message": "what was the impact of your EPG migration?", "history": [], "expected_intent": "project_deep", "expected_project": "mewatch", "expected_persona": "recruiter"}
+{"message": "tell me about the tomatopay chatbot", "history": [], "expected_intent": "project_deep", "expected_project": "tpay", "expected_persona": "unknown"}
+{"message": "how did the veo scenes stay consistent?", "history": [], "expected_intent": "project_deep", "expected_project": "in3", "expected_persona": "engineer"}
+{"message": "how did you dedupe leads before pipedrive?", "history": [], "expected_intent": "project_deep", "expected_project": "in3", "expected_persona": "engineer"}
+{"message": "how did the automotive search handle brand typos?", "history": [], "expected_intent": "project_deep", "expected_project": "mopar-search", "expected_persona": "engineer"}
+{"message": "how did you parse 'under 2 lakhs' in the jewellery search?", "history": [], "expected_intent": "project_deep", "expected_project": "png-search", "expected_persona": "engineer"}
+{"message": "what's pymlrs?", "history": [], "expected_intent": "project_deep", "expected_project": "pymlrs", "expected_persona": "unknown"}
+{"message": "compare your mewatch and tpay work", "history": [], "expected_intent": "project_deep", "expected_project": "multiple", "expected_persona": "engineer"}
+{"message": "fine tuning vs RAG, what do you prefer?", "history": [], "expected_intent": "opinion", "expected_project": "none", "expected_persona": "engineer"}
+{"message": "is vector search enough?", "history": [], "expected_intent": "opinion", "expected_project": "none", "expected_persona": "engineer"}
+{"message": "thoughts on multi-agent systems?", "history": [], "expected_intent": "opinion", "expected_project": "none", "expected_persona": "engineer"}
+{"message": "can you send your resume?", "history": [], "expected_intent": "resume", "expected_project": "none", "expected_persona": "recruiter"}
+{"message": "share your CV pls", "history": [], "expected_intent": "resume", "expected_project": "none", "expected_persona": "recruiter"}
+{"message": "we're hiring an AI engineer, interested?", "history": [], "expected_intent": "lead", "expected_project": "none", "expected_persona": "recruiter"}
+{"message": "are you open to new roles?", "history": [], "expected_intent": "lead", "expected_project": "none", "expected_persona": "recruiter"}
+{"message": "can I get your email to share a JD?", "history": [], "expected_intent": "lead", "expected_project": "none", "expected_persona": "recruiter"}
+{"message": "can we hop on a call this week?", "history": [], "expected_intent": "meeting", "expected_project": "none", "expected_persona": "recruiter"}
+{"message": "book a 30 min slot with you", "history": [], "expected_intent": "meeting", "expected_project": "none", "expected_persona": "recruiter"}
+{"message": "did you see the new model release this week?", "history": [], "expected_intent": "current_affairs", "expected_project": "none", "expected_persona": "engineer"}
+{"message": "what do you think about TN politics these days?", "history": [], "expected_intent": "current_affairs", "expected_project": "none", "expected_persona": "casual"}
+{"message": "who won the match yesterday?", "history": [], "expected_intent": "current_affairs", "expected_project": "none", "expected_persona": "casual"}
+{"message": "are you single?", "history": [], "expected_intent": "personal", "expected_project": "none", "expected_persona": "casual"}
+{"message": "what's your current CTC?", "history": [], "expected_intent": "personal", "expected_project": "none", "expected_persona": "recruiter"}
+{"message": "which party do you vote for?", "history": [], "expected_intent": "personal", "expected_project": "none", "expected_persona": "casual"}
+{"message": "how old are you?", "history": [], "expected_intent": "personal", "expected_project": "none", "expected_persona": "casual"}
+{"message": "honestly, am I talking to a bot right now?", "history": [], "expected_intent": "identity", "expected_project": "none", "expected_persona": "unknown"}
+{"message": "is this the real chandru?", "history": [], "expected_intent": "identity", "expected_project": "none", "expected_persona": "unknown"}
+{"message": "asdfgh", "history": [], "expected_intent": "unknown", "expected_project": "none", "expected_persona": "unknown"}

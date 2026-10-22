@@ -1,0 +1,136 @@
+"""WebSocket endpoint and protocol (architecture §7)."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import re
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
+import time
+
+from app.chat import TurnRunner
+from app.tools import questions
+from app.memory import FORGET_RE, VisitorMemory, memory_note
+from app.persona_rules.lines import pick
+from app.ratelimit import Limiter, ip_key
+
+log = logging.getLogger(__name__)
+router = APIRouter()
+UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+limiter = Limiter()
+
+
+@router.websocket("/ws/chat")
+async def chat(ws: WebSocket):
+    app = ws.app
+    rt = app.state.runtime
+    s = rt.deps.settings
+    origin = ws.headers.get("origin")
+    if s.is_prod and origin not in s.allowed_origins:
+        await ws.close(code=1008)
+        return
+    await ws.accept()
+    runner: TurnRunner = app.state.runner
+    send_lock = asyncio.Lock()
+
+    async def send(ev: dict):
+        async with send_lock:
+            await ws.send_text(json.dumps(ev, ensure_ascii=False))
+
+    try:
+        hello = json.loads(await asyncio.wait_for(ws.receive_text(), timeout=15))
+    except (asyncio.TimeoutError, json.JSONDecodeError, WebSocketDisconnect):
+        await ws.close(code=1008)
+        return
+    # visitor_id: long-lived, random, per browser. (session_id accepted from older frontends.)
+    vid = str(hello.get("visitor_id") or hello.get("session_id") or "").lower()
+    if hello.get("type") != "hello" or not UUID_RE.match(vid):
+        await ws.close(code=1008)
+        return
+    tz = hello.get("tz") if isinstance(hello.get("tz"), str) and len(hello.get("tz")) < 64 else None
+    memory: VisitorMemory = app.state.memory
+    sid = vid  # rate limits and dedupe are per visitor
+    preface: list[str] = []
+    try:  # "ask the real me": an answer is waiting, so Chandru texts first
+        preface = await questions.deliver(rt.deps, vid)
+        if preface:
+            visit0 = await memory.open(vid, tz)
+            await send({"type": "typing", "on": True})
+            for i, b in enumerate(preface):
+                await asyncio.sleep(min(2.5, 0.6 + len(b) / 18))
+                await send({"type": "burst", "turn_id": "answer", "seq": i, "text": b})
+            await send({"type": "typing", "on": False})
+            await rt.deps.db.add_message(visit0.conversation_id, "answer", "chandru", "\n".join(preface), "answer")
+            if not visit0.new_conversation:
+                await runner.append_history(visit0.conversation_id, preface)
+                preface = []
+    except Exception:  # noqa: BLE001 - never block the chat on this
+        log.exception("answer delivery failed")
+    ipk = ip_key(ws.client.host if ws.client else None)
+    nudged = False
+    sent_any = False
+    turns = 0
+
+    while True:
+        try:
+            raw = await asyncio.wait_for(ws.receive_text(), timeout=s.idle_nudge_s)
+        except asyncio.TimeoutError:
+            if sent_any and not nudged:
+                nudged = True
+                for b in pick(rt.deps.kb.policy["idle_nudge"], set(), "nudge", rt.deps.rng):
+                    await send({"type": "burst", "turn_id": "nudge", "seq": 0, "text": b})
+            continue
+        except WebSocketDisconnect:
+            return
+        try:
+            msg = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        kind = msg.get("type")
+        if kind == "forget" or (kind == "message" and FORGET_RE.search(str(msg.get("text", "")))):
+            await memory.forget(vid)
+            for b in pick(rt.deps.kb.policy["forget_done"], set(), "forget", rt.deps.rng):
+                await send({"type": "burst", "turn_id": "forget", "seq": 0, "text": b})
+            await send({"type": "forgotten"})
+            continue
+        if kind not in ("message", "action"):
+            continue
+        text = str(msg.get("text", "")).strip()[: s.max_message_chars]
+        action = None
+        if kind == "action":
+            action = {"action": str(msg.get("action")), "slot_id": msg.get("slot_id")}
+            text = text or {"pick_slot": "this one works", "confirm": "yes"}.get(action["action"], "ok")
+        if not text:
+            continue
+        cmid = msg.get("client_msg_id")
+        if isinstance(cmid, str) and await rt.deps.db.seen_client_msg(sid, cmid[:64]):
+            continue  # duplicate after reconnect
+        if not (limiter.hit(f"s:{sid}", s.rate_per_min_session, 60) and limiter.hit(
+                f"sd:{sid}", s.rate_per_day_session, 86400) and limiter.hit(ipk, s.rate_per_min_ip, 60)):
+            await send({"type": "error", "code": "rate_limited",
+                        "text": pick(rt.deps.kb.policy["rate_limited"], set(), "rl", rt.deps.rng)[0]})
+            continue
+        turns += 1
+        if turns > s.max_turns_per_session:
+            await send({"type": "burst", "turn_id": "limit", "seq": 0,
+                        "text": "gotta run now haha, drop me a mail if u wanna continue 🙌"})
+            await ws.close(code=1000)
+            return
+        sent_any = True
+        try:
+            visit = await memory.open(vid, tz)  # same conversation, or a new one after a long silence
+            mem = None
+            if visit.new_conversation or preface:
+                mem = {"profile": visit.profile, "preface": preface,
+                       "note": memory_note(visit.profile, visit.visits, visit.last_seen, time.time())}
+                preface = []
+            await memory.touch(visit)  # activity recorded on arrival, before the (slow) reply
+            await runner.run(visit.conversation_id, text, send, action=action, visitor_tz=tz, memory=mem)
+        except WebSocketDisconnect:
+            return
+        except Exception:  # noqa: BLE001
+            log.exception("turn failed")
+            await send({"type": "error", "code": "internal", "text": "ugh my phone's acting up 😅"})

@@ -1,60 +1,71 @@
+"""FastAPI entry point."""
+
+from __future__ import annotations
+
+import asyncio
 import contextlib
 import logging
-import warnings
-from typing import AsyncGenerator
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from app.database import init_db, close_db
-from app.websocket import router as websocket_router, manager
-from app.graph import graph
+from app.chat import TurnRunner
+from app.config import get_settings
+from app.graph.build import build_graph
+from app.jobs.scheduler import start_scheduler
+from app.memory import VisitorMemory
+from app.retrieval.embed import warm
+from app.runtime import build_runtime
+from app.ws import router as ws_router
 
-# Suppress harmless Pydantic serialization warnings caused by LangChain's AIMessage.parsed field
-warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
-
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("virtual-me")
 
 
 @contextlib.asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Lifecycle manager — initializes the database on startup, cleans up on shutdown."""
-    logger.info("Starting Portfolio Bot...")
-    await init_db()
-    yield
-    logger.info("Shutting down Portfolio Bot...")
-    for session_id, ws in list(manager.active_connections.items()):
-        await ws.close(code=1001, reason="Server shutting down")
-    await close_db()
+async def lifespan(app: FastAPI):
+    s = get_settings()
+    rt = await build_runtime(s)
+    await asyncio.to_thread(warm)  # load embedding models now, not on the first visitor's message
+    s.checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    async with AsyncSqliteSaver.from_conn_string(str(s.checkpoint_path)) as saver:
+        graph = build_graph(saver)
+        app.state.runtime = rt
+        app.state.runner = TurnRunner(graph, rt.deps)
+        app.state.memory = VisitorMemory(rt.deps, graph, saver)
+        sched = start_scheduler(rt, app.state.memory)
+        log.info("ready: store=%s jev=%s llm=%s", rt.store_backend, s.jev_model, s.llm_models)
+        try:
+            yield
+        finally:
+            sched.shutdown(wait=False)
+            await rt.close()
 
 
-app = FastAPI(
-    title="Portfolio Bot Backend",
-    version="2.0.0",
-    lifespan=lifespan,
-)
-
-app.include_router(websocket_router)
+app = FastAPI(title="Virtual Me", version="0.1.0", lifespan=lifespan)
+app.include_router(ws_router)
 
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "active_websockets": len(manager.active_connections)}
+@app.get("/healthz")
+async def healthz():
+    return {"ok": True}
 
-@app.post("/api/evaluate")
-async def evaluate_query(request: Request):
-    data = await request.json()
-    initial_state = {
-        "session_id": "eval_session",
-        "user_message": data["query"],
-        "history_list": [],
-        "intent": None,
-        "retrieved_context": "",
-        "messages": []
+
+@app.get("/readyz")
+async def readyz():
+    rt = app.state.runtime
+    s = rt.deps.settings
+    checks = {
+        "openrouter_key": bool(s.openrouter_api_key),
+        "store": rt.deps.store is not None,
+        "store_backend": rt.store_backend,
+        "db": True,
+        "lead_key": bool(s.lead_key_b64) or not s.is_prod,
     }
-    state = await graph.ainvoke(initial_state)
-    return {
-        "actual_answer": state["messages"][-1].content,
-        "retrieved_context": state.get("retrieved_context", "")
-    }
+    try:
+        await rt.deps.db.fetchone("SELECT 1")
+    except Exception:  # noqa: BLE001
+        checks["db"] = False
+    ok = checks["openrouter_key"] and checks["db"] and checks["lead_key"]
+    return JSONResponse(checks, status_code=200 if ok else 503)

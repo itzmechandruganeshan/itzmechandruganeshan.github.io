@@ -1,129 +1,135 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, Sparkles, Terminal, Cpu, Briefcase, FileText } from "lucide-react";
+import { Search, X, Terminal, Cpu, Briefcase, FileText, CalendarCheck, Video } from "lucide-react";
 import { useChat } from "@/context/ChatContext";
 import { v4 as uuidv4 } from "uuid";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws/chat";
+const VISITOR_KEY = "vm_visitor_id";
+const LEGACY_KEY = "vm_session_id";
+
+type Slot = { id: string; start: string; end: string; label: string };
+type Card =
+    | { kind: "resume"; url: string }
+    | { kind: "slots"; tz?: string; slots: Slot[] }
+    | { kind: "booking"; label: string; meet_url?: string | null };
+type Message =
+    | { role: "user"; content: string }
+    | { role: "ai"; content: string }
+    | { role: "card"; card: Card };
+
+type ServerEvent =
+    | { type: "typing"; on: boolean }
+    | { type: "burst"; turn_id: string; seq: number; text: string }
+    | ({ type: "card"; turn_id: string } & Card)
+    | { type: "turn_complete"; turn_id: string }
+    | { type: "error"; code: string; text: string }
+    | { type: "forgotten" };
+
+// A random id for this browser: lets "Chandru" remember a returning visitor on this device only.
+// It identifies nothing about the person and is rotated by "Forget me".
+function getVisitorId(): string {
+    try {
+        const existing = localStorage.getItem(VISITOR_KEY) || localStorage.getItem(LEGACY_KEY);
+        const id = existing || uuidv4();
+        localStorage.setItem(VISITOR_KEY, id);
+        localStorage.removeItem(LEGACY_KEY);
+        return id;
+    } catch {
+        return uuidv4(); // private mode / storage blocked: no memory across visits
+    }
+}
+
+function rotateVisitorId(): void {
+    try {
+        localStorage.setItem(VISITOR_KEY, uuidv4());
+    } catch {
+        /* storage blocked: nothing persisted anyway */
+    }
+}
 
 export function CmdKChatbot() {
     const { isOpen, closeChat, toggleChat } = useChat();
     const [query, setQuery] = useState("");
-    const [messages, setMessages] = useState<{ role: "user" | "ai"; content: string }[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [isTyping, setIsTyping] = useState(false);
-    const [sessionId, setSessionId] = useState<string>("");
+    const [connected, setConnected] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const wsRef = useRef<WebSocket | null>(null);
+    const outboxRef = useRef<string[]>([]);
+    const retryRef = useRef(0);
+    const reconnectRef = useRef<() => void>(() => {});
 
-    // Initialize Session ID with IP Address
-    useEffect(() => {
-        const fetchIp = async () => {
-            try {
-                // Fetch public IP address
-                const response = await fetch("https://api.ipify.org?format=json");
-                const data = await response.json();
-                setSessionId(data.ip);
-                // Optionally still store it so we don't fetch if not needed, but fetching is fast
-                localStorage.setItem("chat_session_id", data.ip);
-            } catch (error) {
-                console.error("Failed to fetch IP, falling back to local storage or UUID", error);
-                // Fallback in case the IP fetch fails (e.g. adblocker)
-                let storedSessionId = localStorage.getItem("chat_session_id");
-                if (!storedSessionId) {
-                    storedSessionId = uuidv4();
-                    localStorage.setItem("chat_session_id", storedSessionId);
-                }
-                setSessionId(storedSessionId);
-            }
-        };
-
-        fetchIp();
-    }, []);
-
-    // WebSocket Connection
-    useEffect(() => {
-        if (!sessionId) return;
-
-        const wsUrl = `ws://localhost:8000/ws/chat?session_id=${sessionId}`;
-        const ws = new WebSocket(wsUrl);
+    // Connect once the chat is first opened; reconnect with backoff.
+    const connect = useCallback(() => {
+        if (wsRef.current && wsRef.current.readyState <= WebSocket.OPEN) return;
+        const ws = new WebSocket(WS_URL);
         wsRef.current = ws;
 
         ws.onopen = () => {
-            console.log("WebSocket connected");
+            retryRef.current = 0;
+            setConnected(true);
+            ws.send(JSON.stringify({
+                type: "hello",
+                visitor_id: getVisitorId(),
+                tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            }));
+            for (const payload of outboxRef.current.splice(0)) ws.send(payload);
         };
 
-        ws.onmessage = async (e) => {
+        ws.onmessage = (e) => {
+            let ev: ServerEvent;
             try {
-                let data;
-                let isJson = false;
-
-                // Check if the message looks like JSON
-                if (typeof e.data === "string" && e.data.trim().startsWith("{")) {
-                    try {
-                        data = JSON.parse(e.data);
-                        isJson = true;
-                    } catch {
-                        isJson = false;
-                    }
-                }
-
-                const processTextChunks = async (text: string) => {
-                    const textChunks = text
-                        .split("|split|")
-                        .map((s: string) => s.trim())
-                        .filter(Boolean);
-
-                    for (let i = 0; i < textChunks.length; i++) {
-                        const chunkText = textChunks[i];
-
-                        if (i === 0) {
-                            // Immediately render the first bubble
-                            setMessages((prev) => [...prev, { role: "ai", content: chunkText }]);
-                        } else {
-                            // Artificial delay and typing simulation for subsequent burst bubbles
-                            setIsTyping(true);
-                            const delay = Math.min(2500, chunkText.length * 40);
-                            await new Promise((resolve) => setTimeout(resolve, delay));
-                            setIsTyping(false);
-
-                            setMessages((prev) => [...prev, { role: "ai", content: chunkText }]);
-                        }
-                    }
-                };
-
-                if (isJson) {
-                    if (data.type === "status") {
-                        if (data.action === "typing") setIsTyping(true);
-                        if (data.action === "idle") setIsTyping(false);
-                    } else if (data.type === "turn_complete") {
-                        setIsTyping(false);
-                    } else if (data.type === "message" && data.text) {
-                        await processTextChunks(data.text);
-                    }
-                } else if (typeof e.data === "string") {
-                    // Handle plain text message
-                    await processTextChunks(e.data);
-                }
-            } catch (err) {
-                console.error("Error handling WebSocket message:", err);
+                ev = JSON.parse(e.data);
+            } catch {
+                return;
+            }
+            if (ev.type === "typing") setIsTyping(ev.on);
+            else if (ev.type === "burst") setMessages((prev) => [...prev, { role: "ai", content: ev.text }]);
+            else if (ev.type === "card") {
+                const { type: _t, turn_id: _id, ...card } = ev; // eslint-disable-line @typescript-eslint/no-unused-vars
+                setMessages((prev) => [...prev, { role: "card", card: card as Card }]);
+            } else if (ev.type === "turn_complete") setIsTyping(false);
+            else if (ev.type === "forgotten") {
+                rotateVisitorId();
+                setMessages((prev) => prev.slice(-2)); // keep only the "done, wiped everything" bubbles
+                setIsTyping(false);
+            } else if (ev.type === "error") {
+                setIsTyping(false);
+                setMessages((prev) => [...prev, { role: "ai", content: ev.text }]);
             }
         };
 
         ws.onclose = () => {
-            console.log("WebSocket disconnected");
+            setConnected(false);
+            setIsTyping(false);
+            const delay = Math.min(15000, 1000 * 2 ** retryRef.current++);
+            setTimeout(() => {
+                if (wsRef.current === ws) reconnectRef.current();
+            }, delay);
         };
+    }, []);
 
-        return () => {
-            if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-                ws.close();
-            }
-        };
-    }, [sessionId]);
+    useEffect(() => {
+        reconnectRef.current = connect;
+    }, [connect]);
 
-    // Auto-scroll logic
+    useEffect(() => {
+        if (isOpen) connect();
+    }, [isOpen, connect]);
+
+    useEffect(() => () => {
+        const ws = wsRef.current;
+        wsRef.current = null;
+        ws?.close();
+    }, []);
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isTyping]);
@@ -136,53 +142,89 @@ export function CmdKChatbot() {
                 toggleChat();
             }
         };
-
         document.addEventListener("keydown", down);
         return () => document.removeEventListener("keydown", down);
     }, [toggleChat]);
 
-    // Focus input when opened
     useEffect(() => {
-        if (isOpen) {
-            inputRef.current?.focus();
-        }
+        if (isOpen) inputRef.current?.focus();
     }, [isOpen]);
 
-    // Close on Escape
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                closeChat();
-            }
+            if (e.key === "Escape") closeChat();
         };
-        if (isOpen) {
-            document.addEventListener("keydown", handleEscape);
-        }
+        if (isOpen) document.addEventListener("keydown", handleEscape);
         return () => document.removeEventListener("keydown", handleEscape);
     }, [isOpen, closeChat]);
 
-    const handleSendMessage = async (e?: React.FormEvent) => {
+    const send = (payload: object) => {
+        const data = JSON.stringify({ ...payload, client_msg_id: uuidv4() });
+        const ws = wsRef.current;
+        if (ws && ws.readyState === WebSocket.OPEN) ws.send(data);
+        else {
+            outboxRef.current.push(data);
+            connect();
+        }
+    };
+
+    const handleSendMessage = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        if (!query.trim() || isTyping || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-
-        const userMessage = query.trim();
+        const text = query.trim();
+        if (!text) return;
         setQuery("");
-        setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+        setMessages((prev) => [...prev, { role: "user", content: text }]);
+        send({ type: "message", text });
+    };
 
-        wsRef.current.send(userMessage);
+    const pickSlot = (slot: Slot) => {
+        setMessages((prev) => [...prev, { role: "user", content: slot.label }]);
+        send({ type: "action", action: "pick_slot", slot_id: slot.id, text: slot.label });
     };
 
     const handleSuggestionClick = (suggestion: string) => {
         setQuery(suggestion);
-        // We could auto-send here, but letting them read it and hit enter is safer
         inputRef.current?.focus();
+    };
+
+    const renderCard = (card: Card) => {
+        if (card.kind === "resume") {
+            return (
+                <a href={card.url} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-gray-200 hover:bg-white/10">
+                    <FileText className="w-4 h-4 text-amber-400" /> Chandru-Ganeshan-Resume.pdf
+                </a>
+            );
+        }
+        if (card.kind === "slots") {
+            return (
+                <div className="flex flex-wrap gap-2">
+                    {card.slots.map((s) => (
+                        <button key={s.id} onClick={() => pickSlot(s)}
+                            className="rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-xs text-blue-200 hover:bg-blue-500/20">
+                            {s.label}
+                        </button>
+                    ))}
+                </div>
+            );
+        }
+        return (
+            <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                <CalendarCheck className="w-4 h-4" />
+                <span>{card.label}</span>
+                {card.meet_url && (
+                    <a href={card.meet_url} target="_blank" rel="noopener noreferrer" className="ml-auto flex items-center gap-1 underline">
+                        <Video className="w-4 h-4" /> Meet
+                    </a>
+                )}
+            </div>
+        );
     };
 
     return (
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -190,26 +232,24 @@ export function CmdKChatbot() {
                         onClick={closeChat}
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh] px-4"
                     >
-                        {/* Modal */}
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: -20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: -20 }}
                             transition={{ duration: 0.15, ease: "easeOut" }}
-                            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+                            onClick={(e) => e.stopPropagation()}
                             className="bg-[#0f1115] border border-white/10 shadow-2xl rounded-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[70vh]"
                         >
-                            {/* Search Bar / Input Area */}
                             <form onSubmit={handleSendMessage} className="relative border-b border-white/10">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
                                     ref={inputRef}
                                     type="text"
-                                    placeholder={isTyping ? "Chandru is typing..." : "Ask me anything..."}
+                                    placeholder="Message Chandru..."
                                     value={query}
+                                    maxLength={500}
                                     onChange={(e) => setQuery(e.target.value)}
-                                    disabled={isTyping}
-                                    className="w-full bg-transparent text-white placeholder-gray-500 py-4 pl-12 pr-12 outline-none text-lg disabled:opacity-50"
+                                    className="w-full bg-transparent text-white placeholder-gray-500 py-4 pl-12 pr-12 outline-none text-lg"
                                 />
                                 <button
                                     type="button"
@@ -220,43 +260,22 @@ export function CmdKChatbot() {
                                 </button>
                             </form>
 
-                            {/* Content Area */}
                             <div className="overflow-y-auto p-4 flex-1 custom-scrollbar">
                                 {messages.length === 0 ? (
-                                    // Empty state / Suggestions
                                     <div className="py-10 px-4 md:px-8 max-w-3xl mx-auto w-full">
                                         <div className="mb-6 flex flex-col items-center md:items-start text-center md:text-left">
-                                            <div className="inline-flex items-center justify-center p-2.5 bg-blue-500/10 rounded-xl mb-4 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-                                                <Sparkles className="w-5 h-5 text-blue-400" />
-                                            </div>
-                                            <h3 className="text-xl font-semibold text-white mb-1.5">Welcome to CG.AI Engine</h3>
+                                            <h3 className="text-xl font-semibold text-white mb-1.5">Hey, it&apos;s Chandru 👋</h3>
                                             <p className="text-gray-400 text-sm max-w-md">
-                                                Ask me any technical questions about my work, architecture decisions, or machine learning experience.
+                                                Text me about my work, projects, or just say hi.
                                             </p>
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
                                             {[
-                                                {
-                                                    icon: <Terminal className="w-4 h-4 text-emerald-400 mb-3" />,
-                                                    title: "Agentic Systems",
-                                                    query: "How do you architect multi-agent workflows?",
-                                                },
-                                                {
-                                                    icon: <Cpu className="w-4 h-4 text-cyan-400 mb-3" />,
-                                                    title: "RAG & Vector Search",
-                                                    query: "Explain your production RAG pipelines.",
-                                                },
-                                                {
-                                                    icon: <Briefcase className="w-4 h-4 text-purple-400 mb-3" />,
-                                                    title: "Project Impact",
-                                                    query: "What was your role in the Tpay AI chatbot?",
-                                                },
-                                                {
-                                                    icon: <FileText className="w-4 h-4 text-amber-400 mb-3" />,
-                                                    title: "Context & Profile",
-                                                    query: "Give me a summary of your resume.",
-                                                },
+                                                { icon: <Terminal className="w-4 h-4 text-emerald-400 mb-3" />, title: "Agentic Systems", query: "How do you architect multi-agent workflows?" },
+                                                { icon: <Cpu className="w-4 h-4 text-cyan-400 mb-3" />, title: "RAG & Search", query: "How do you avoid false positives in search?" },
+                                                { icon: <Briefcase className="w-4 h-4 text-purple-400 mb-3" />, title: "Current Work", query: "What are you building at Searce?" },
+                                                { icon: <FileText className="w-4 h-4 text-amber-400 mb-3" />, title: "Resume", query: "Can you share your resume?" },
                                             ].map((suggestion, i) => (
                                                 <button
                                                     key={i}
@@ -276,29 +295,27 @@ export function CmdKChatbot() {
                                         </div>
                                     </div>
                                 ) : (
-                                    // Chat History
-                                    <div className="space-y-4">
+                                    <div className="space-y-2">
                                         {messages.map((msg, idx) => (
-                                            <div
-                                                key={idx}
-                                                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                                            >
-                                                <div
-                                                    className={`max-w-[85%] rounded-2xl px-4 py-3 ${msg.role === "user"
-                                                        ? "bg-blue-600 text-white"
-                                                        : "bg-white/10 text-gray-200 border border-white/5"
-                                                        }`}
-                                                >
-                                                    {msg.role === "ai" ? (
-                                                        <div className="prose prose-invert max-w-none prose-p:my-1 prose-pre:my-2 prose-pre:bg-black/50 prose-pre:p-2 prose-pre:rounded-lg text-sm">
-                                                            <ReactMarkdown>
-                                                                {msg.content}
-                                                            </ReactMarkdown>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-sm whitespace-pre-wrap">{msg.content}</span>
-                                                    )}
-                                                </div>
+                                            <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                                                {msg.role === "card" ? (
+                                                    <div className="max-w-[85%]">{renderCard(msg.card)}</div>
+                                                ) : (
+                                                    <div
+                                                        className={`max-w-[85%] rounded-2xl px-4 py-2 ${msg.role === "user"
+                                                            ? "bg-blue-600 text-white"
+                                                            : "bg-white/10 text-gray-200 border border-white/5"
+                                                            }`}
+                                                    >
+                                                        {msg.role === "ai" ? (
+                                                            <div className="prose prose-invert max-w-none prose-p:my-0 text-sm">
+                                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-sm whitespace-pre-wrap">{msg.content}</span>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                         {isTyping && (
@@ -317,10 +334,21 @@ export function CmdKChatbot() {
                                 )}
                             </div>
 
-                            {/* Footer */}
                             <div className="px-4 py-3 bg-white/5 border-t border-white/10 text-xs text-gray-500 flex justify-between items-center">
-                                <div>Press <kbd className="font-sans px-1.5 py-0.5 rounded-md bg-white/10 text-gray-300">esc</kbd> to close</div>
-                                <div><span className="text-blue-500 font-medium">CG.AI</span> Engine</div>
+                                <div className="flex items-center gap-2">
+                                    <span>Chats are saved for 30 days so I remember you on this device.</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => send({ type: "forget" })}
+                                        className="underline hover:text-gray-300"
+                                    >
+                                        Forget me
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className={`w-2 h-2 rounded-full ${connected ? "bg-emerald-500" : "bg-gray-600"}`} />
+                                    {isTyping ? "typing..." : connected ? "online" : "connecting..."}
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
