@@ -136,7 +136,7 @@ async def run_case(case: dict, graph, base_deps, sem: asyncio.Semaphore) -> dict
         for t in case["turns"]:
             t0 = time.perf_counter()
             try:
-                rec = await runner.run(sid, t["say"], send, visitor_tz=case.get("tz"))
+                rec = await runner.run(sid, t["say"], send, visitor_tz=case.get("tz"), reading=case.get("reading"))
             except Exception as e:  # noqa: BLE001
                 rec = {"error": repr(e), "replies": [], "trace": [], "flags": ["runner_error"]}
             card_project = {c.id: c.project_id for c in deps.kb.cards}

@@ -6,12 +6,16 @@ import asyncio
 import contextlib
 import logging
 
+from zoneinfo import ZoneInfo
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from app.chat import TurnRunner
 from app.config import get_settings
+from app.context.clock import public_status
 from app.graph.build import build_graph
 from app.jobs.scheduler import start_scheduler
 from app.memory import VisitorMemory
@@ -45,11 +49,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Virtual Me", version="0.1.0", lifespan=lifespan)
 app.include_router(ws_router)
+# The site's hero reads /status from the browser, so it needs CORS (the websocket checks the origin itself).
+app.add_middleware(CORSMiddleware, allow_origins=get_settings().allowed_origins, allow_methods=["GET"])
 
 
 @app.get("/healthz")
 async def healthz():
     return {"ok": True}
+
+
+@app.get("/status")
+async def status():
+    rt = app.state.runtime
+    now = rt.deps.now().astimezone(ZoneInfo(rt.deps.settings.timezone))
+    return {"line": public_status(rt.deps.kb, now)}
 
 
 @app.get("/readyz")

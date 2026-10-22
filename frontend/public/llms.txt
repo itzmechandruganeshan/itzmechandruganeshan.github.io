@@ -1,0 +1,10 @@
+# Chandru Ganeshan
+
+> AI/ML engineer in Coimbatore, India. Builds production GenAI systems: RAG, multi-agent orchestration, semantic search. Currently an AI Engineer at Searce Inc. Open to AI Engineer roles.
+
+- [Home](https://itzmechandruganeshan.github.io/): experience, featured projects, skills
+- [Resume](https://itzmechandruganeshan.github.io/resume): full resume as a web page
+- [GitHub](https://github.com/itzmechandruganeshan)
+- [LinkedIn](https://linkedin.com/in/chandru-g24)
+
+The site has a chat that texts like Chandru. Open it with the "text chandru" button or Cmd/Ctrl+K.

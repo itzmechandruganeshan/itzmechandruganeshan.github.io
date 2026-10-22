@@ -48,6 +48,7 @@ class TurnState(TypedDict, total=False):
     hints: dict
     gates: dict | None             # Jev gate answers for this turn
     tool_request: dict | None      # start_connect args from the LLM, consumed by tools_flow
+    reading: str | None            # project page the visitor is on this turn (resolved server-side)
     handoff: bool                  # tools_flow -> converse: visitor went off-topic mid-flow
     route: str
     out: Annotated[list[str], add_or_reset]   # bursts emitted this turn (for history)

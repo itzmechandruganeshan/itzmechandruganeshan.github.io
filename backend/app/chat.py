@@ -39,8 +39,9 @@ class TurnRunner:
             await self.graph.aupdate_state(config, {"history": hist}, as_node="finalize")
 
     async def run(self, session_id: str, text: str, send: Send, *, action: dict | None = None,
-                  visitor_tz: str | None = None, memory: dict | None = None) -> dict:
-        """session_id is the conversation id (one per visit). `memory` = returning-visitor profile + note."""
+                  visitor_tz: str | None = None, memory: dict | None = None, reading: str | None = None) -> dict:
+        """session_id is the conversation id (one per visit). `memory` = returning-visitor profile + note.
+        `reading` = name of the project page the visitor is on (already resolved against our data)."""
         t_recv = time.perf_counter()
         turn_id = f"t-{uuid.uuid4().hex[:10]}"
         config = {"configurable": {"thread_id": session_id, "deps": self.deps}}
@@ -49,7 +50,7 @@ class TurnRunner:
         if pending:
             inp = Command(resume={"text": text, "turn_id": turn_id, "action": action})
         else:
-            inp = {"session_id": session_id, "message": text, "turn_id": turn_id, "action": action}
+            inp = {"session_id": session_id, "message": text, "turn_id": turn_id, "action": action, "reading": reading}
             if not snapshot.values:  # first turn of this session
                 known = {k: v for k, v in ((memory or {}).get("profile") or {}).items()
                          if k in ("name", "company", "role") and v}

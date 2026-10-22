@@ -114,6 +114,24 @@ def _holidays(kb: Knowledge, today: date) -> tuple[dict | None, tuple[dict, int]
     return current, upcoming
 
 
+# Plain wording for the site's status line (the chat itself uses the chattier status_lines).
+STATUS_TEXT = {
+    "up_late": "up late", "getting_ready": "getting ready", "commute_in": "on the way to office",
+    "mails": "going through mails", "standup": "in standup", "tea_break": "tea break", "working": "at work",
+    "lunch": "lunch", "reels": "post-lunch break", "office_gossip": "chatting with colleagues",
+    "eod_update": "wrapping up the day", "commute_home": "heading home", "evening": "at home",
+    "winding_down": "winding down", "late_night_work": "working late", "lazy_morning": "slow morning",
+    "weekend_chill": "weekend mode", "out_with_friends": "out with friends", "cooking_biryani": "cooking biryani",
+    "biryani_nap": "post-biryani nap", "sunday_evening": "sunday evening",
+}
+
+
+def public_status(kb: Knowledge, now: datetime) -> str:
+    """e.g. "at work, 3:12 pm IST" for the hero on the portfolio site."""
+    status = routine_status(kb.routine, now)
+    return f"{STATUS_TEXT.get(status, status.replace('_', ' '))}, {now:%I:%M %p}".replace(", 0", ", ").lower() + " IST"
+
+
 def build_clock(
     kb: Knowledge,
     *,

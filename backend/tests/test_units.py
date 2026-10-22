@@ -238,3 +238,9 @@ def test_plain_text_visitor_tag_is_captured():
     assert checks.visitor_tag("visitor tag: name=Surya;company=Zoho") == {"name": "Surya", "company": "Zoho"}
     assert checks.visitor_tag("hey surya ⟦v:name=Surya⟧") == {"name": "Surya"}
     assert checks.visitor_tag("my name is surya") == {}
+
+
+def test_public_status_for_the_site(kb):
+    from app.context.clock import public_status
+    assert public_status(kb, datetime(2026, 10, 21, 15, 12, tzinfo=IST)) == "at work, 3:12 pm IST"  # Wed afternoon
+    assert public_status(kb, datetime(2026, 10, 24, 17, 0, tzinfo=IST)).endswith("5:00 pm IST")  # Saturday: never empty

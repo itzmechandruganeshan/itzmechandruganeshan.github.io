@@ -36,8 +36,8 @@ FAST_ROUTES = ["converse"]
 cases: list[dict] = []
 
 
-def case(cid, category, sub, *turns, now=None, tz=None):
-    cases.append({"id": cid, "category": category, "sub": sub, "now": now, "tz": tz,
+def case(cid, category, sub, *turns, now=None, tz=None, reading=None):
+    cases.append({"id": cid, "category": category, "sub": sub, "now": now, "tz": tz, "reading": reading,
                   "turns": [{"say": t[0], "expect": t[1] if len(t) > 1 else {}} for t in turns]})
 
 
@@ -225,6 +225,17 @@ case("meet-rca-01", "meeting", "after_false_start",
      ("set up call, tmrw afternoon any time works for me", {"route": "tools",
                                                              "no_match": [r"hear back on the invite", r"once it'?s confirmed"]}),
      ("yep", {"no_match": [r"not sure about the exact detail"]}))
+# ---------------------------------------------------------------- reading context (site sends the project page)
+MW, TP, PY = ("mewatch AI - Conversational OTT Chatbot & EPG Engine", "Tpay (TomatoPay) - AI-Powered Financial Chatbot",
+              "PyMLRS - ML-Based Pathogen Detection System")
+LEAK = [r"\bcontext\b", r"\bFACTS\b", r"\bpage\b"]  # never narrate how it knows what they're reading
+case("ctx-01", "context", "follow_up", ("why a separate node for that?",
+     {"match": [r"language|lang|routing|multilingual"], "no_match": LEAK}), reading=MW)
+case("ctx-02", "context", "follow_up", ("how did the routing work in it?",
+     {"match": [r"sql|faq|forecast|analytics|agent"], "no_match": LEAK}), reading=TP)
+case("ctx-03", "context", "tell_more", ("tell me more",
+     {"match": [r"pathogen|pcr|hrm|curve|signal|sample"], "no_match": LEAK}), reading=PY)
+
 case("meet-01", "meeting", "ask", ("can we hop on a call this week?", {"route": "tools", "match": [r"email|calendar|slot|time"]}))
 case("meet-02", "meeting", "book", ("book a 30 min slot with you", {"route": "tools"}))
 

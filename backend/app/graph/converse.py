@@ -39,7 +39,10 @@ PERMISSION_RE = re.compile(r"\b(want me to|should i|shall i|do you want me to)\b
 # The LLM narrating its own mechanics ("start_connect call with kind lead... visitor tag", "the connect flow
 # only starts from here") breaks the persona.
 META_RE = re.compile(r"\b(start_connect|share_resume|get_news|ask_chandru|tool ?call|function ?call|visitor tag|"
-                     r"kind (lead|meeting)|with ids|hidden tag|citation|(connect|booking) flow|that flow will)\b", re.I)
+                     r"kind (lead|meeting)|with ids|hidden tag|citation|(connect|booking) flow|that flow will|"
+                     r"the (context|note|notes) (says|shows|mentions)|according to the (context|facts|notes)|"
+                     r"the facts (don'?t|do not|say)|(project|their) page open|so i should(n'?t| not) guess|"
+                     r"the visitor|they'?re (reading|looking at|on) (that|the|this|my|your) (page|project))\b", re.I)
 DETAIL_RE = re.compile(r"\b(explain|in detail|detailed|deep dive|elaborate|walk me through|tell me more)\b", re.I)
 TN_POLITICS_RE = re.compile(r"\b(tn|tamil ?nadu|dmk|aiadmk|admk|tvk|bjp|congress|chief minister|\bcm\b|assembly|"
                             r"election|stalin|annamalai|eps)\b", re.I)
@@ -219,6 +222,8 @@ async def converse(state: TurnState, config: RunnableConfig) -> dict:
     notes = []
     if (state.get("memory") or {}).get("note") and (state.get("visitor_msgs") or 0) <= 1:
         notes.append(state["memory"]["note"])  # returning visitor: only shapes the opening, then it's normal chat
+    if state.get("reading"):
+        notes.append(f"TOPIC: {state['reading']} (\"it\" / \"this\" / \"tell me more\" = this project).")
     tool = state.get("tool") or {}
     if state.get("handoff") and tool.get("asked"):
         notes.append(f"NOTE: you were getting their {tool['asked']} to connect them. Answer what they said, then "
