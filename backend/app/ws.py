@@ -35,6 +35,11 @@ def valid_tz(tz: object) -> str | None:
     return tz
 
 
+def client_ip(ws: WebSocket) -> str | None:
+    """Fly's proxy sets Fly-Client-IP and overwrites any value a visitor sends; X-Forwarded-For can be faked."""
+    return ws.headers.get("fly-client-ip") or (ws.client.host if ws.client else None)
+
+
 def reading_project(kb, ctx: object):
     """The project the visitor is reading, resolved against our own data: browser text never reaches the prompt."""
     label = ctx.get("project") if isinstance(ctx, dict) else None
@@ -95,7 +100,7 @@ async def chat(ws: WebSocket):
                 preface = []
     except Exception:  # noqa: BLE001 - never block the chat on this
         log.exception("answer delivery failed")
-    ipk = ip_key(ws.client.host if ws.client else None)
+    ipk = ip_key(client_ip(ws))
     nudged = False
     sent_any = False
     turns = 0
@@ -160,10 +165,16 @@ async def chat(ws: WebSocket):
         cmid = msg.get("client_msg_id")
         if isinstance(cmid, str) and await rt.deps.db.seen_client_msg(sid, cmid[:64]):
             continue  # duplicate after reconnect
+        # visitor ids are chosen by the browser, so the per-IP and global daily caps are what bound spend
         if not (limiter.hit(f"s:{sid}", s.rate_per_min_session, 60) and limiter.hit(
-                f"sd:{sid}", s.rate_per_day_session, 86400) and limiter.hit(ipk, s.rate_per_min_ip, 60)):
+                f"sd:{sid}", s.rate_per_day_session, 86400) and limiter.hit(ipk, s.rate_per_min_ip, 60)
+                and limiter.hit(f"d:{ipk}", s.rate_per_day_ip, 86400)):
             await send({"type": "error", "code": "rate_limited",
                         "text": pick(rt.deps.kb.policy["rate_limited"], set(), "rl", rt.deps.rng)[0]})
+            continue
+        if not limiter.hit("global:day", s.max_turns_per_day, 86400):
+            for i, b in enumerate(pick(rt.deps.kb.policy["busy"], set(), "busy", rt.deps.rng)):
+                await send({"type": "burst", "turn_id": "busy", "seq": i, "text": b})
             continue
         turns += 1
         if turns > s.max_turns_per_session:
@@ -181,8 +192,11 @@ async def chat(ws: WebSocket):
                 preface = []
             await memory.touch(visit)  # activity recorded on arrival, before the (slow) reply
             reading = reading_project(rt.deps.kb, msg.get("context"))
-            await runner.run(visit.conversation_id, text, send, action=action, visitor_tz=tz, memory=mem,
-                             reading=reading.name if reading else None)
+            rec = await runner.run(visit.conversation_id, text, send, action=action, visitor_tz=tz, memory=mem,
+                                   reading=reading.name if reading else None)
+            if "end_chat" in (rec.get("flags") or []):
+                await ws.close(code=1000)
+                return
         except WebSocketDisconnect:
             return
         except Exception:  # noqa: BLE001

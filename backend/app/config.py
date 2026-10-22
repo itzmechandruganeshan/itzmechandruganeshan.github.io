@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     t_injection: float = 0.7
     t_off_limits: float = 0.7
     t_personal: float = 0.6
+    t_abuse: float = 0.8
     t_grounded: float = 0.5
     t_partisan: float = 0.3
     t_news_relevant: float = 0.6
@@ -68,6 +69,8 @@ class Settings(BaseSettings):
     rate_per_min_session: int = 20
     rate_per_day_session: int = 200
     rate_per_min_ip: int = 60
+    rate_per_day_ip: int = 300
+    max_turns_per_day: int = 3000  # all visitors together: a hard ceiling on LLM spend
     allowed_origins: list[str] = [
         "https://itzmechandruganeshan.github.io",
         "http://localhost:3000",

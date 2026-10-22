@@ -5,6 +5,7 @@ import { ChatProvider } from "@/context/ChatContext";
 import { ChatPanel } from "@/components/ChatPanel";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { Torch } from "@/components/Torch";
 import { SITE_URL } from "@/data/site";
 
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -30,7 +31,8 @@ export const metadata: Metadata = {
 };
 
 // Set before first paint so a saved theme never flashes the other one.
-const themeScript = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+// Torch needs a mouse: a saved torch falls back to dark on touch screens.
+const themeScript = `try{var t=localStorage.getItem("theme");if(t==="torch"&&!matchMedia("(pointer: fine)").matches)t="dark";if(t==="light"||t==="dark"||t==="torch")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
@@ -43,6 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     <Nav />
                     {children}
                     <Footer />
+                    <Torch />
                     <ChatPanel />
                 </ChatProvider>
             </body>

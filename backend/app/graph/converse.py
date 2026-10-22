@@ -91,6 +91,13 @@ def _deflect(deps: Deps, g: dict, used: set[str]) -> dict:
             "trace": [{"step": "deflect", "why": flag}]}
 
 
+def _boundary(deps: Deps, state: TurnState, used: set[str]) -> dict:
+    hits = (state.get("boundary_hits") or 0) + 1
+    key, flags = ("boundary_end", ["boundary", "end_chat"]) if hits >= 2 else ("boundary", ["boundary"])
+    return {"out": emit_bursts(deps, pick(deps.kb.policy[key], used, key, deps.rng)), "flags": flags,
+            "boundary_hits": hits, "trace": [{"step": "boundary", "hits": hits}]}
+
+
 def _personal(deps: Deps, state: TurnState, g: dict, used: set[str]) -> dict:
     pressed = dict(state.get("dodges") or {})
     bursts, level = dodge(deps.kb.policy, g["personal_category"], pressed, used, deps.rng)
@@ -249,9 +256,10 @@ async def converse(state: TurnState, config: RunnableConfig) -> dict:
 
     if gate_route:  # policy overrides whatever the LLM was writing
         g = {k: gates.get(k) for k in ("sincere_identity_q", "injection_attempt", "off_limits", "personal_category",
-                                       "personal_conf", "source")}
+                                       "personal_conf", "source", "abusive_or_sexual")}
         out = {"identity": _identity, "deflect": lambda d, st, gg, u: _deflect(d, gg, u),
-               "personal": _personal}[gate_route](deps, state, g, used)
+               "personal": _personal, "boundary": lambda d, st, gg, u: _boundary(d, st, u)}[gate_route](
+            deps, state, g, used)
         out["trace"] = trace + out.get("trace", [])
         return {**base, **out, "route": gate_route, "used_lines": sorted(used)}
 

@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 import uuid
-from collections import defaultdict, deque
+from collections import OrderedDict, deque
 from collections.abc import Awaitable, Callable
 
 from langgraph.types import Command
@@ -28,7 +28,14 @@ class TurnRunner:
         self.deps = deps
         self.sleep = sleep
         # fillers used in each session's last 2 replies (single machine, so in-memory is fine)
-        self.recent_fillers: dict[str, deque] = defaultdict(lambda: deque(maxlen=2))
+        self.recent_fillers: OrderedDict[str, deque] = OrderedDict()  # last 500 sessions only
+
+    def _fillers(self, session_id: str) -> deque:
+        q = self.recent_fillers.setdefault(session_id, deque(maxlen=2))
+        self.recent_fillers.move_to_end(session_id)
+        while len(self.recent_fillers) > 500:
+            self.recent_fillers.popitem(last=False)
+        return q
 
     async def append_history(self, session_id: str, bubbles: list[str]) -> None:
         """Bubbles sent outside a turn (e.g. a delivered answer) join the conversation history."""
@@ -66,7 +73,7 @@ class TurnRunner:
                 inp["visitor"] = {**(snapshot.values.get("visitor") or {}), "tz": visitor_tz}
 
         clock = build_clock(self.deps.kb, now=self.deps.now(), tz=self.deps.settings.timezone, rng=self.deps.rng)
-        fillers = FillerBudget(self.recent_fillers[session_id])
+        fillers = FillerBudget(self._fillers(session_id))
         # The visitor's own name/company are never typo targets ("bye kaaviya" in prod), even lowercase.
         visitor = {**(snapshot.values.get("visitor") or {}),
                    **((inp.get("visitor") if isinstance(inp, dict) else None) or {})}

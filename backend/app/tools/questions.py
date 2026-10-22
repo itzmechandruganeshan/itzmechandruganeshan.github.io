@@ -21,6 +21,7 @@ from app.intelligence.llm import LLMError
 from app.tools import notify
 
 log = logging.getLogger(__name__)
+MAX_OPEN_QUESTIONS = 3
 QUOTED_RE = re.compile(r"\n\s*On .{5,200}wrote:.*\Z|\n\s*-{2,}\s*Original Message.*\Z", re.S | re.I)
 
 
@@ -35,6 +36,10 @@ async def forward(deps: Deps, conversation_id: str, question: str, context: str)
     visitor_id = row["visitor_id"] if row else None
     if not visitor_id:
         return None
+    row = await deps.db.fetchone("SELECT COUNT(*) AS n FROM questions WHERE visitor_id=? AND status='asked'",
+                                 (visitor_id,))
+    if row and row["n"] >= MAX_OPEN_QUESTIONS:
+        return None  # each question emails Chandru: cap what one visitor can send
     qid = f"q-{uuid.uuid4().hex[:12]}"
     await deps.db.execute(
         "INSERT INTO questions(id, visitor_id, conversation_id, question_enc, context_enc, status, created_at) "

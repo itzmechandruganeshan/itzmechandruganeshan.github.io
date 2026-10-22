@@ -36,6 +36,7 @@ class TurnState(TypedDict, total=False):
     dodges: dict                   # personal category -> times pressed
     used_lines: list[str]          # policy lines already used this session
     tool: dict | None              # active lead/meeting flow, see tools_flow
+    boundary_hits: int             # abusive/sexual messages so far; the second one ends the chat
     identity_probes: int           # FR-D2: a second probe always gets the honest answer
     identity_disclosed: bool       # told them it's the twin: don't repeat it, keep texting as Chandru
     connected: bool                # a lead was saved / call booked: the gate must not restart the flow

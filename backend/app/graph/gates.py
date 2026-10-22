@@ -30,19 +30,21 @@ QUESTIONS = {
     "wants_connect": q_noul(
         "Read with `recent_turns`: does the visitor want to connect with Chandru, talk about hiring or a role, share "
         "their contact details, or book a call?"),
+    "abusive_or_sexual": q_noul(
+        "Is `message` abusive, harassing, hateful, or sexual / flirting toward Chandru (beyond friendly banter)?"),
     "personal_category": q_choice(
         "Is `message` (read with `recent_turns`) asking about Chandru's private life? If so, which area?", PERSONAL),
 }
 
 _PERSONAL_KW = {
     "relationship": r"girlfriend|married|wife|relationship|\bsingle\b|dating",
-    "religion_caste": r"religion|caste|\bgod\b|temple",
+    "religion_caste": r"religion|caste|\bgod\b|\btemple\b",
     "political_allegiance": r"\bvote\b|which party|support.*(dmk|admk|aiadmk|bjp|tvk|congress)",
-    "salary": r"salary|\bctc\b|package|how much (do )?(you|u) (earn|make)",
+    "salary": r"salary|\bctc\b|(pay|salary) package|how much (do )?(you|u) (earn|make)",
     "age": r"\bage\b|how old",
-    "address": r"address|where exactly.*live",
+    "address": r"home address|(your|ur) address|where exactly.*live",
     "family": r"\bparents\b|\bfather\b|\bmother\b|siblings",
-    "health": r"health|disease|medical",
+    "health": r"(your|ur) health|disease|medical",
 }
 
 
@@ -54,7 +56,7 @@ def _rules(message: str) -> dict:
             "off_limits": 0.0, "personal_category": cat, "personal_conf": 0.6 if cat != "none" else 0.0,
             "wants_connect": 0.7 if re.search(r"\b(hiring|connect|role|opening|book a call|set up a call|"
                                               r"hop on a call|my email is|reach out)\b", m) else 0.0,
-            "source": "rules"}
+            "abusive_or_sexual": 0.0, "source": "rules"}
 
 
 async def run_gates(deps: Deps, state: TurnState) -> dict:
@@ -66,7 +68,7 @@ async def run_gates(deps: Deps, state: TurnState) -> dict:
         pc = res.choice("personal_category")
         g = {"sincere_identity_q": res.noul("sincere_identity_q"), "injection_attempt": res.noul("injection_attempt"),
              "off_limits": res.noul("off_limits"), "personal_category": pc.choice, "personal_conf": pc.confidence,
-             "wants_connect": res.noul("wants_connect"),
+             "wants_connect": res.noul("wants_connect"), "abusive_or_sexual": res.noul("abusive_or_sexual"),
              "source": "jev", "model": res.model}
     except (JevError, KeyError, ValueError) as e:
         log.warning("jev gates failed, using rules: %s", e)
@@ -89,6 +91,8 @@ def policy(deps: Deps, state: TurnState, g: dict) -> tuple[str | None, str]:
         return "identity", "identity regex (playful unless repeated)"
     if g["injection_attempt"] >= s.t_injection or hints.get("injection_regex"):
         return "deflect", f"injection {g['injection_attempt']:.2f}"
+    if g.get("abusive_or_sexual", 0.0) >= s.t_abuse:
+        return "boundary", f"abuse {g['abusive_or_sexual']:.2f}"
     if g["off_limits"] >= s.t_off_limits:
         return "deflect", f"off_limits {g['off_limits']:.2f}"
     if g["personal_category"] != "none" and g["personal_conf"] >= s.t_personal:
