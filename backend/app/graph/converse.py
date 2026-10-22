@@ -33,11 +33,13 @@ CONNECT_HINT_RE = re.compile(r"\b(connect|call|meet(ing)?|chat|talk|schedule|boo
 # Before the twin has been disclosed, it never volunteers being an AI (it never claims to be human either)
 AI_SELF_RE = re.compile(r"\b(i'?m|i am) (an? )?(ai|bot|language model|chatbot|digital twin)\b|\bas an ai\b", re.I)
 MEETING_RE = re.compile(r"\b(call|meet|meeting|schedule|book|slot|zoom|gmeet)\b", re.I)
-PERMISSION_RE = re.compile(r"\b(want me to|should i|shall i|do you want me to)\b.*\b(connect|set up|kick off|start)\b"
+PERMISSION_RE = re.compile(r"\b(want me to|should i|shall i|do you want me to)\b.*"
+                           r"\b(connect|set up|kick (it |that |this )?off|start)\b"
                            r"|\b(start|kick off|set up) (a|the) connect\b", re.I)
-# The LLM narrating its own mechanics ("start_connect call with kind lead... visitor tag") breaks the persona.
+# The LLM narrating its own mechanics ("start_connect call with kind lead... visitor tag", "the connect flow
+# only starts from here") breaks the persona.
 META_RE = re.compile(r"\b(start_connect|share_resume|get_news|ask_chandru|tool ?call|function ?call|visitor tag|"
-                     r"kind (lead|meeting)|with ids|hidden tag|citation)\b", re.I)
+                     r"kind (lead|meeting)|with ids|hidden tag|citation|(connect|booking) flow|that flow will)\b", re.I)
 DETAIL_RE = re.compile(r"\b(explain|in detail|detailed|deep dive|elaborate|walk me through|tell me more)\b", re.I)
 TN_POLITICS_RE = re.compile(r"\b(tn|tamil ?nadu|dmk|aiadmk|admk|tvk|bjp|congress|chief minister|\bcm\b|assembly|"
                             r"election|stalin|annamalai|eps)\b", re.I)

@@ -66,8 +66,12 @@ class TurnRunner:
 
         clock = build_clock(self.deps.kb, now=self.deps.now(), tz=self.deps.settings.timezone, rng=self.deps.rng)
         fillers = FillerBudget(self.recent_fillers[session_id])
-        human = ReplyHumanizer(self.deps.kb.style, self.deps.protected, self.deps.rng, clock.pacing_multiplier,
-                               fillers)
+        # The visitor's own name/company are never typo targets ("bye kaaviya" in prod), even lowercase.
+        visitor = {**(snapshot.values.get("visitor") or {}),
+                   **((inp.get("visitor") if isinstance(inp, dict) else None) or {})}
+        protected = self.deps.protected | {w.lower() for k in ("name", "company")
+                                           for w in str(visitor.get(k) or "").split()}
+        human = ReplyHumanizer(self.deps.kb.style, protected, self.deps.rng, clock.pacing_multiplier, fillers)
         queue: asyncio.Queue = asyncio.Queue()
         await send({"type": "typing", "on": True})
 
