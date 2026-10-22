@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws/chat";
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "wss://virtual-me-chandru.fly.dev/ws/chat";
 const VISITOR_KEY = "vm_visitor_id";
 const LEGACY_KEY = "vm_session_id";
 
