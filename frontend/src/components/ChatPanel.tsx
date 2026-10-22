@@ -49,6 +49,18 @@ function rotateVisitorId(): void {
     }
 }
 
+// The project the visitor is reading: the project page itself, or the project block at mid-screen on the home page.
+// Rects, not elementFromPoint, so the open panel never hides it.
+function readingContext(): { project?: string } {
+    const mid = innerHeight / 2;
+    const el = document.querySelector<HTMLElement>("main[data-project]") ??
+        [...document.querySelectorAll<HTMLElement>("article[data-project]")].find((a) => {
+            const r = a.getBoundingClientRect();
+            return r.top <= mid && r.bottom >= mid;
+        });
+    return el?.dataset.project ? { project: el.dataset.project } : {};
+}
+
 // Replies are plain text; only links need to be clickable.
 function linkify(text: string): React.ReactNode[] {
     return text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
@@ -70,6 +82,7 @@ export function ChatPanel() {
     const retryRef = useRef(0);
     const reconnectRef = useRef<() => void>(() => {});
     const sendTextRef = useRef<(text: string) => void>(() => {});
+    const sendRef = useRef<(payload: object) => void>(() => {});
 
     // Connect once the chat is first opened; reconnect with backoff.
     const connect = useCallback(() => {
@@ -155,6 +168,16 @@ export function ChatPanel() {
         if (isOpen) inputRef.current?.focus();
     }, [isOpen]);
 
+    // Opened while reading a project with nothing said yet: Chandru texts first about it (server decides, once).
+    const emptyRef = useRef(true);
+    useEffect(() => {
+        emptyRef.current = messages.length === 0;
+    }, [messages]);
+    useEffect(() => {
+        const context = readingContext();
+        if (isOpen && !pending && emptyRef.current && context.project) sendRef.current({ type: "opened", context });
+    }, [isOpen, pending]);
+
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === "Escape") closeChat();
@@ -175,12 +198,13 @@ export function ChatPanel() {
 
     const sendText = (text: string) => {
         setMessages((prev) => [...prev, { role: "user", content: text }]);
-        send({ type: "message", text });
+        send({ type: "message", text, context: readingContext() });
     };
 
     // A message queued from the hero prompt or an "ask me about this" link.
     useEffect(() => {
         sendTextRef.current = sendText;
+        sendRef.current = send;
     });
     useEffect(() => {
         if (pending) {

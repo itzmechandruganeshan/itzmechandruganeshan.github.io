@@ -10,7 +10,7 @@ export function Projects() {
             <h2 id="projects-h" className="mb-6 text-[20px]">Featured projects</h2>
             <div className="space-y-8">
                 {resumeData.projects.map((p) => (
-                    <article key={p.name}>
+                    <article key={p.name} data-project={p.name.split(" - ")[0]}>
                         <h3><Link href={`/projects/${slugOf(p.name)}`} className="link">{p.name}</Link></h3>
                         <p className="text-muted">{p.company}, {p.period}</p>
                         <p className="mt-1">{parseBoldText(p.description)}</p>

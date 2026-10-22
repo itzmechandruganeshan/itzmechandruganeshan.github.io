@@ -15,7 +15,7 @@ import time
 from app.chat import TurnRunner
 from app.tools import questions
 from app.memory import FORGET_RE, VisitorMemory, memory_note
-from app.persona_rules.lines import pick
+from app.persona_rules.lines import fill, pick
 from app.ratelimit import Limiter, ip_key
 
 log = logging.getLogger(__name__)
@@ -33,6 +33,19 @@ def valid_tz(tz: object) -> str | None:
         log.warning("unknown visitor tz %r; using the default", tz)
         return None
     return tz
+
+
+def reading_project(kb, ctx: object):
+    """The project the visitor is reading, resolved against our own data: browser text never reaches the prompt."""
+    label = ctx.get("project") if isinstance(ctx, dict) else None
+    if not isinstance(label, str) or not 0 < len(label) <= 80:
+        return None
+    label = label.lower().strip()
+    for p in kb.projects:
+        if p.visibility == "public" and (p.name.split(" - ")[0].lower() == label or any(
+                re.search(rf"\b{re.escape(a)}\b", label) for a in p.aliases)):
+            return p
+    return None
 limiter = Limiter()
 
 
@@ -86,6 +99,8 @@ async def chat(ws: WebSocket):
     nudged = False
     sent_any = False
     turns = 0
+    # shortcut: openers are remembered per connection, so a page reload can greet again; fine at portfolio traffic
+    greeted: set[str] = set()
 
     while True:
         try:
@@ -108,6 +123,30 @@ async def chat(ws: WebSocket):
             for b in pick(rt.deps.kb.policy["forget_done"], set(), "forget", rt.deps.rng):
                 await send({"type": "burst", "turn_id": "forget", "seq": 0, "text": b})
             await send({"type": "forgotten"})
+            continue
+        if kind == "opened":  # chat opened while reading a project: Chandru texts first about it
+            p = reading_project(rt.deps.kb, msg.get("context"))
+            lines = rt.deps.kb.policy.get("context_opener")
+            if not p or not lines or p.id in greeted or not limiter.hit(f"s:{sid}", s.rate_per_min_session, 60):
+                continue
+            greeted.add(p.id)
+            bubbles = fill(pick(lines, set(), "ctx", rt.deps.rng), project=p.aliases[0] if p.aliases else p.name)
+            try:
+                visit = await memory.open(vid, tz)
+                await send({"type": "typing", "on": True})
+                for i, b in enumerate(bubbles):
+                    await asyncio.sleep(min(2.5, 0.6 + len(b) / 18))
+                    await send({"type": "burst", "turn_id": "opener", "seq": i, "text": b})
+                await send({"type": "typing", "on": False})
+                await rt.deps.db.add_message(visit.conversation_id, "opener", "chandru", "\n".join(bubbles), "opener")
+                if visit.new_conversation:
+                    preface += bubbles  # joins the history on their first message, like a delivered answer
+                else:
+                    await runner.append_history(visit.conversation_id, bubbles)
+            except WebSocketDisconnect:
+                return
+            except Exception:  # noqa: BLE001 - an opener must never break the chat
+                log.exception("context opener failed")
             continue
         if kind not in ("message", "action"):
             continue
@@ -141,7 +180,9 @@ async def chat(ws: WebSocket):
                        "note": memory_note(visit.profile, visit.visits, visit.last_seen, time.time())}
                 preface = []
             await memory.touch(visit)  # activity recorded on arrival, before the (slow) reply
-            await runner.run(visit.conversation_id, text, send, action=action, visitor_tz=tz, memory=mem)
+            reading = reading_project(rt.deps.kb, msg.get("context"))
+            await runner.run(visit.conversation_id, text, send, action=action, visitor_tz=tz, memory=mem,
+                             reading=reading.name if reading else None)
         except WebSocketDisconnect:
             return
         except Exception:  # noqa: BLE001

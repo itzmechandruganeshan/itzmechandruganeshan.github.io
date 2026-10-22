@@ -33,7 +33,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
     const url = `${SITE_URL}/projects/${slugOf(p.name)}`;
 
     return (
-        <main className="mx-auto max-w-[38rem] px-4 pt-12">
+        <main className="mx-auto max-w-[38rem] px-4 pt-12" data-project={p.name.split(" - ")[0]}>
             <JsonLd data={{
                 "@context": "https://schema.org",
                 "@graph": [
