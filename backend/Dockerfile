@@ -1,29 +1,15 @@
 FROM python:3.13-slim
-
-# Install uv securely and configure it
-COPY --from=ghcr.io/astral-sh/uv:0.5.21 /uv /uvx /bin/
-ENV UV_COMPILE_BYTECODE=1
-ENV UV_LINK_MODE=copy
-
+COPY --from=ghcr.io/astral-sh/uv:0.11.13 /uv /usr/local/bin/uv
 WORKDIR /app
-
-# Enable dependency caching across builds
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project --no-dev
-
-
-# Copy app code
-COPY . .
-
-# Install the project itself (without dev dependencies)
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
-
-# Place executables in the environment at the front of the path
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PYTHONUNBUFFERED=1 \
+    EMBED_CACHE_DIR=/app/models
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY app ./app
+COPY data ./data
+COPY scripts ./scripts
+# Bake the embedding models into the image: no download on cold start.
+RUN uv run --no-sync python -c "from app.retrieval.embed import warm; warm()"
 ENV PATH="/app/.venv/bin:$PATH"
-
-EXPOSE 8000
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8080
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--forwarded-allow-ips", "*"]
