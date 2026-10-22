@@ -12,4 +12,4 @@ COPY scripts ./scripts
 RUN uv run --no-sync python -c "from app.retrieval.embed import warm; warm()"
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8080
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--forwarded-allow-ips", "*"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -142,21 +142,62 @@ strong {
   }
 }
 
-/* ThemeToggle shows the theme you would switch to. */
+/* ThemeToggle shows the theme you would switch to: light -> dark -> torch (mouse only) -> light. */
+.to-dark,
+.to-torch,
 .to-light {
   display: none;
 }
-:root[data-theme="dark"] .to-dark {
-  display: none;
-}
-:root[data-theme="dark"] .to-light {
+:root[data-theme="light"] .to-dark,
+:root[data-theme="dark"] .to-light,
+:root[data-theme="torch"] .to-light {
   display: inline;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .to-dark {
-    display: none;
-  }
-  :root:not([data-theme="light"]) .to-light {
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .to-dark {
     display: inline;
   }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .to-light {
+    display: inline;
+  }
+}
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :root[data-theme="dark"] .to-light {
+    display: none;
+  }
+  :root[data-theme="dark"] .to-torch {
+    display: inline;
+  }
+}
+@media (pointer: fine) and (prefers-reduced-motion: no-preference) and (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .to-light {
+    display: none;
+  }
+  :root:not([data-theme]) .to-torch {
+    display: inline;
+  }
+}
+
+/* Torch: pitch black, a circle of light follows the cursor (or keyboard focus). */
+:root[data-theme="torch"] {
+  --paper: #000;
+  --ink: #e9e9e1;
+  --muted: #9c9b92;
+  --rule: rgb(233 233 225 / 0.16);
+  --sand: #3a2d24;
+  --accent: #d9a27e;
+  color-scheme: dark;
+}
+.torch {
+  display: none;
+}
+:root[data-theme="torch"] .torch {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background: radial-gradient(circle 170px at var(--x, 50%) var(--y, 35%), transparent 0, transparent 45%, rgb(0 0 0 / 0.97) 100%);
 }
