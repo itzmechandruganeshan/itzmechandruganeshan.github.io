@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import re
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -20,6 +21,18 @@ from app.ratelimit import Limiter, ip_key
 log = logging.getLogger(__name__)
 router = APIRouter()
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+
+
+def valid_tz(tz: object) -> str | None:
+    """The browser's IANA zone, or None if this server can't load it (a bad zone crashed slot labels in prod)."""
+    if not isinstance(tz, str) or not tz or len(tz) >= 64:
+        return None
+    try:
+        ZoneInfo(tz)
+    except (ValueError, KeyError):  # ZoneInfoNotFoundError is a KeyError
+        log.warning("unknown visitor tz %r; using the default", tz)
+        return None
+    return tz
 limiter = Limiter()
 
 
@@ -50,7 +63,7 @@ async def chat(ws: WebSocket):
     if hello.get("type") != "hello" or not UUID_RE.match(vid):
         await ws.close(code=1008)
         return
-    tz = hello.get("tz") if isinstance(hello.get("tz"), str) and len(hello.get("tz")) < 64 else None
+    tz = valid_tz(hello.get("tz"))
     memory: VisitorMemory = app.state.memory
     sid = vid  # rate limits and dedupe are per visitor
     preface: list[str] = []

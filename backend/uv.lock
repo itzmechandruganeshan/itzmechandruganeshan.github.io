@@ -2935,6 +2935,7 @@ dependencies = [
     { name = "qdrant-client", extra = ["fastembed"] },
     { name = "rapidfuzz" },
     { name = "tenacity" },
+    { name = "tzdata" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -2963,6 +2964,7 @@ requires-dist = [
     { name = "qdrant-client", extras = ["fastembed"], specifier = ">=1.12" },
     { name = "rapidfuzz", specifier = ">=3.9" },
     { name = "tenacity", specifier = ">=9.0" },
+    { name = "tzdata", specifier = ">=2026.5" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
 
