@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-NO_HOOK_ROUTES = {"tools", "identity", "deflect", "personal", "reject", "clarify"}
+NO_HOOK_ROUTES = {"tools", "identity", "deflect", "personal", "reject", "clarify", "boundary"}
 
 
 def should_ask(*, visitor_name: str | None, asked: bool, visitor_msgs: int, route: str,

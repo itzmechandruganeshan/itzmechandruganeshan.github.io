@@ -72,3 +72,8 @@ def test_second_abusive_message_ends_the_chat(tmp_path):
         assert "out" in " ".join(second)
         with pytest.raises(Exception):  # socket closed by the server
             ws.receive_text()
+
+
+def test_no_whos_this_after_a_boundary():
+    from app.persona_rules.who_hook import should_ask
+    assert not should_ask(visitor_name=None, asked=False, visitor_msgs=2, route="boundary", ask_after=[2])
