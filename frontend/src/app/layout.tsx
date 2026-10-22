@@ -1,65 +1,51 @@
 import type { Metadata } from "next";
-import { Inter, Roboto_Mono } from "next/font/google"; // specific fonts
+import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ChatProvider } from "@/context/ChatContext";
-import { CmdKChatbot } from "@/components/CmdKChatbot";
-import { ScrollProgress } from "@/components/ScrollProgress";
+import { ChatPanel } from "@/components/ChatPanel";
+import { Nav } from "@/components/Nav";
+import { Footer } from "@/components/Footer";
+import { SITE_URL } from "@/data/site";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
-const robotoMono = Roboto_Mono({
-  variable: "--font-roboto-mono",
-  subsets: ["latin"],
-});
+const DESCRIPTION =
+    "AI/ML engineer in Coimbatore building production GenAI: RAG, multi-agent systems and semantic search. Currently at Searce Inc.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://itzmechandruganeshan.github.io"),
-  title: {
-    default: "Chandru Ganeshan | AI Engineer",
-    template: "%s | Chandru Ganeshan",
-  },
-  description: "Machine Learning Engineer specializing in Agentic AI, Intelligent Systems, and cutting-edge frontend engineering.",
-  keywords: ["AI Engineer", "Machine Learning", "Agentic AI", "Frontend Engineer", "React", "Next.js", "Chandru Ganeshan", "Portfolio"],
-  authors: [{ name: "Chandru Ganeshan", url: "https://github.com/itzmechandruganeshan" }],
-  creator: "Chandru Ganeshan",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://itzmechandruganeshan.github.io",
-    title: "Chandru Ganeshan | AI Engineer",
-    description: "Machine Learning Engineer specializing in Agentic AI and Intelligent Systems.",
-    siteName: "Chandru Ganeshan Portfolio",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Chandru Ganeshan | AI Engineer",
-    description: "Machine Learning Engineer specializing in Agentic AI and Intelligent Systems.",
-    creator: "@itzmechandru", // Assuming a handle; adjust if needed
-  },
-  alternates: {
-    canonical: "https://itzmechandruganeshan.github.io",
-  },
+    metadataBase: new URL(SITE_URL),
+    title: { default: "Chandru Ganeshan, AI/ML Engineer", template: "%s | Chandru Ganeshan" },
+    description: DESCRIPTION,
+    keywords: ["AI engineer", "ML engineer", "GenAI", "RAG", "LangGraph", "semantic search", "Coimbatore", "Chandru Ganeshan"],
+    authors: [{ name: "Chandru Ganeshan", url: SITE_URL }],
+    openGraph: {
+        type: "website",
+        locale: "en_IN",
+        siteName: "Chandru Ganeshan",
+        title: "Chandru Ganeshan, AI/ML Engineer",
+        description: DESCRIPTION,
+        images: [{ url: "/og.png", width: 1200, height: 630, alt: "Chandru Ganeshan, AI/ML Engineer" }],
+    },
+    twitter: { card: "summary_large_image", title: "Chandru Ganeshan, AI/ML Engineer", description: DESCRIPTION, images: ["/og.png"] },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${robotoMono.variable} antialiased`}
-      >
-        <ScrollProgress />
-        <ChatProvider>
-          {children}
-          <CmdKChatbot />
-        </ChatProvider>
-      </body>
-    </html>
-  );
+// Set before first paint so a saved theme never flashes the other one.
+const themeScript = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+    return (
+        <html lang="en" suppressHydrationWarning>
+            <head>
+                <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+            </head>
+            <body className={geistMono.variable}>
+                <ChatProvider>
+                    <Nav />
+                    {children}
+                    <Footer />
+                    <ChatPanel />
+                </ChatProvider>
+            </body>
+        </html>
+    );
 }
