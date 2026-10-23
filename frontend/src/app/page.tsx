@@ -13,7 +13,7 @@ export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default function Home() {
     return (
-        <main className="mx-auto max-w-[38rem] px-4">
+        <main className="page">
             <JsonLd data={{
                 "@context": "https://schema.org",
                 "@type": "Person",

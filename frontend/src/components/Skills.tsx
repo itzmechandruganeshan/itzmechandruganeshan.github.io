@@ -6,7 +6,7 @@ export function Skills() {
             <h2 id="skills-h" className="mb-6 text-[20px]">Skills</h2>
             <dl className="space-y-2">
                 {Object.entries(resumeData.skills).map(([group, items]) => (
-                    <div key={group} className="grid grid-cols-[6.5rem_1fr] gap-x-3">
+                    <div key={group} className="grid grid-cols-[6.5rem_1fr] gap-x-3 lg:grid-cols-[11rem_1fr] lg:gap-x-8">
                         <dt className="text-muted">{group.replace("_", " ")}</dt>
                         <dd>{items.join(", ")}</dd>
                     </div>

@@ -56,6 +56,26 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* One column on phones; wider on laptops, with prose still capped near 72 characters a line. */
+.page {
+  margin-inline: auto;
+  max-width: 38rem;
+  padding-inline: 1rem;
+}
+@media (min-width: 1024px) {
+  body {
+    font-size: 14px;
+  }
+  .page {
+    max-width: 58rem;
+    padding-inline: 2rem;
+  }
+}
+main p,
+main li {
+  max-width: 72ch;
+}
+
 ::selection {
   background: var(--sand);
   color: var(--ink);
