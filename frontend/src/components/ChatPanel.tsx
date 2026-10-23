@@ -166,6 +166,7 @@ export function ChatPanel() {
 
     useEffect(() => {
         if (isOpen) inputRef.current?.focus();
+        document.documentElement.classList.toggle("chat-open", isOpen); // lets the page make room (globals.css)
     }, [isOpen]);
 
     // Opened while reading a project with nothing said yet: Chandru texts first about it (server decides, once).
