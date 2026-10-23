@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 // The phone number in the data file is deliberately not shown on the public page.
 export default function Resume() {
     return (
-        <main className="mx-auto max-w-[38rem] px-4 pt-12">
+        <main className="page pt-12">
             <JsonLd data={{
                 "@context": "https://schema.org",
                 "@type": "ProfilePage",
