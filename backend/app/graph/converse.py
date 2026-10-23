@@ -31,7 +31,10 @@ log = logging.getLogger(__name__)
 CONNECT_HINT_RE = re.compile(r"\b(connect|call|meet(ing)?|chat|talk|schedule|book|slot|hir(e|ing)|role|job|opening|"
                              r"position|interview|recruit|opportunit\w*|email|mail|contact|reach)\b", re.I)
 # Before the twin has been disclosed, it never volunteers being an AI (it never claims to be human either)
-AI_SELF_RE = re.compile(r"\b(i'?m|i am) (an? )?(ai|bot|language model|chatbot|digital twin)\b|\bas an ai\b", re.I)
+# "I'm an AI engineer" / "I'm an AI/ML engineer" is a job title, not a confession (it dropped the employer answer)
+AI_SELF_RE = re.compile(r"\b(i'?m|i am) (an? )?(ai|bot|language model|chatbot|digital twin)\b"
+                        r"(?!\s*/?\s*(ml|engineer|developer|research|scientist|lead|architect|specialist|intern))"
+                        r"|\bas an ai\b(?!\s*/?\s*(ml|engineer))", re.I)
 MEETING_RE = re.compile(r"\b(call|meet|meeting|schedule|book|slot|zoom|gmeet)\b", re.I)
 PERMISSION_RE = re.compile(r"\b(want me to|should i|shall i|do you want me to)\b.*"
                            r"\b(connect|set up|kick (it |that |this )?off|start)\b"

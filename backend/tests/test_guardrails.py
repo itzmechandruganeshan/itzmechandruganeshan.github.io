@@ -77,3 +77,11 @@ def test_second_abusive_message_ends_the_chat(tmp_path):
 def test_no_whos_this_after_a_boundary():
     from app.persona_rules.who_hook import should_ask
     assert not should_ask(visitor_name=None, asked=False, visitor_msgs=2, route="boundary", ask_after=[2])
+
+
+@pytest.mark.parametrize("line,hit", [("Searce Inc, I'm an AI Engineer there since May 2026", False),
+                                      ("i'm an AI/ML engineer at searce", False), ("as an AI engineer i like evals", False),
+                                      ("i'm an AI tbh", True), ("I am a bot lol", True), ("as an ai, i can't", True)])
+def test_job_title_is_not_volunteering_being_an_ai(line, hit):
+    from app.graph.converse import AI_SELF_RE
+    assert bool(AI_SELF_RE.search(line)) is hit
