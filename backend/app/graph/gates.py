@@ -32,8 +32,11 @@ QUESTIONS = {
         "their contact details, or book a call?"),
     "abusive_or_sexual": q_noul(
         "Is `message` abusive, harassing, hateful, or sexual / flirting toward Chandru (beyond friendly banter)?"),
+    # "i had a break up" is the visitor sharing their own life, not asking about Chandru's: answering it with a
+    # dodge ("haha next question") was cold. Only questions about Chandru count.
     "personal_category": q_choice(
-        "Is `message` (read with `recent_turns`) asking about Chandru's private life? If so, which area?", PERSONAL),
+        "Is `message` (read with `recent_turns`) asking about Chandru's own private life? If the visitor is talking "
+        "about their own life, answer none. If it is about Chandru, which area?", PERSONAL),
 }
 
 _PERSONAL_KW = {
