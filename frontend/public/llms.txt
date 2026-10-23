@@ -5,6 +5,6 @@
 - [Home](https://itzmechandruganeshan.github.io/): experience, featured projects, skills
 - [Resume](https://itzmechandruganeshan.github.io/resume): full resume as a web page
 - [GitHub](https://github.com/itzmechandruganeshan)
-- [LinkedIn](https://linkedin.com/in/chandru-g24)
+- [LinkedIn](https://linkedin.com/in/chandruganeshan)
 
 The site has a chat that texts like Chandru. Open it with the "text chandru" button or Cmd/Ctrl+K.

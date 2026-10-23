@@ -4,7 +4,7 @@ export const resumeData = {
     contact: {
         email: "chandruganeshan24@gmail.com",
         phone: "+91 9087535918",
-        linkedin: "https://linkedin.com/in/chandru-g24",
+        linkedin: "https://linkedin.com/in/chandruganeshan",
         location: "Coimbatore, India",
     },
     summary:
