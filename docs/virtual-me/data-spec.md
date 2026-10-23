@@ -31,7 +31,7 @@ current:
   since: 2026-05
   location: Coimbatore, India
 links:
-  linkedin: https://linkedin.com/in/chandru-g24
+  linkedin: https://linkedin.com/in/chandruganeshan
   github: https://github.com/itzmechandruganeshan
   resume: /resume/chandru-ganeshan-resume.pdf
 experience:
