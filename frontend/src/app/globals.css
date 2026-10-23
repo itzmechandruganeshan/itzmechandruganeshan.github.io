@@ -71,6 +71,20 @@ body {
     padding-inline: 2rem;
   }
 }
+/* Desktop: the docked chat is 400px wide; the page re-centres in what's left instead of hiding under it. */
+@media (min-width: 768px) {
+  body {
+    transition: padding-right 0.2s ease;
+  }
+  .chat-open body {
+    padding-right: 400px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+}
 main p,
 main li {
   max-width: 72ch;
